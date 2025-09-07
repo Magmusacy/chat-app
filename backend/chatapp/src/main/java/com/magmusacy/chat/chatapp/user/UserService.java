@@ -28,4 +28,8 @@ public class UserService {
     public List<User> findConnectedUsers() {
         return repository.findAllByIsOnline(true);
     }
+
+    public Optional<User> findById(int id) {
+        return repository.findById(id);
+    }
 }
