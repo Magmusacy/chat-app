@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/chatapp
+    url: jdbc:postgresql://localhost:5433/chatapp
     username: chatuser
     password: chatpassword
     driver-class-name: org.postgresql.Driver
@@ -8,3 +8,6 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
+server:
+  error:
+    include-message: always
