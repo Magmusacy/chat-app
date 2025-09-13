@@ -2,12 +2,14 @@ package com.magmusacy.chat.chatapp.user;
 
 import com.magmusacy.chat.chatapp.auth.dto.RegisterRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,6 +41,15 @@ public class UserService implements UserDetailsService {
         Optional<User> connectedUser = userRepository.findById(user.getId());
         connectedUser.ifPresent(u -> {
             u.setIsOnline(false);
+            u.setLastSeen(LocalDateTime.now());
+            userRepository.save(u);
+        });
+    }
+
+    public void connectUser(User user) {
+        Optional<User> disconnectedUser = userRepository.findById(user.getId());
+        disconnectedUser.ifPresent(u -> {
+            u.setIsOnline(true);
             userRepository.save(u);
         });
     }
@@ -61,5 +72,11 @@ public class UserService implements UserDetailsService {
         return userRepository.findByEmail(username).orElseThrow(
                 () -> new UsernameNotFoundException("")
         );
+    }
+
+    public UserMeDTO getUserInfo() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException(""));
+        return new UserMeDTO(user.getName(), user.getEmail());
     }
 }

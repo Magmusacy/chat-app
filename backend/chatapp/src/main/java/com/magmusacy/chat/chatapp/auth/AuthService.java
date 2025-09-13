@@ -3,6 +3,7 @@ package com.magmusacy.chat.chatapp.auth;
 import com.magmusacy.chat.chatapp.auth.dto.AuthenticationResponse;
 import com.magmusacy.chat.chatapp.auth.dto.LoginRequest;
 import com.magmusacy.chat.chatapp.auth.dto.RegisterRequest;
+import com.magmusacy.chat.chatapp.user.PasswordMismatchException;
 import com.magmusacy.chat.chatapp.user.User;
 import com.magmusacy.chat.chatapp.user.UserService;
 import lombok.RequiredArgsConstructor;

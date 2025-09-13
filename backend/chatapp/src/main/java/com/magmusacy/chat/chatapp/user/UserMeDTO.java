@@ -2,9 +2,8 @@ package com.magmusacy.chat.chatapp.user;
 
 import java.time.LocalDateTime;
 
-public record UserDTO(
+public record UserMeDTO(
         String name,
-        Boolean isOnline,
-        LocalDateTime lastSeen
+        String email
 ) {
 }

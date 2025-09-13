@@ -19,7 +19,7 @@ public class ChatMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     @NonNull
-    private LocalDateTime createdAt;
+    private LocalDateTime timestamp;
     @NonNull
     private String content;
 
