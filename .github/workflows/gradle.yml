@@ -22,6 +22,7 @@ jobs:
         distribution: 'temurin'
 
     - name: Allow gradle execution
+      working-directory: backend/chatapp
       run: chmod +x gradlew
 
     - name: Setup Gradle
