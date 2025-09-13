@@ -25,6 +25,7 @@ public class UserService implements UserDetailsService {
         } else if (userRepository.existsByEmail(request.email())) {
             throw new UserAlreadyExistsException("This email is already in use");
         }
+
         User user = new User();
         user.setEmail(request.email());
         user.setName(request.name());
@@ -54,8 +55,8 @@ public class UserService implements UserDetailsService {
         });
     }
 
-    public List<User> findConnectedUsers() {
-        return userRepository.findAllByIsOnline(true);
+    public List<UserDTO> findAllUsers() {
+        return userRepository.findAll().stream().map(user -> new UserDTO(user.getId(), user.getName())).toList();
     }
 
     public Optional<User> findById(int id) {

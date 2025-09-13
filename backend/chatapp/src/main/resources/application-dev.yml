@@ -1,6 +1,8 @@
 spring:
   datasource:
-    url: ${DATABASE_URL}
+    url: jdbc:postgresql://localhost:5433/chatapp
+    username: chatuser
+    password: chatpassword
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -11,5 +13,5 @@ server:
     include-message: always
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: 029DObcj44vaBTbx1PrSsFW0CbbdKefq6gLJGKY7meQ=
 
