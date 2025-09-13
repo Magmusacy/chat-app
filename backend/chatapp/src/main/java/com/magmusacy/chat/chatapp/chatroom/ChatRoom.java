@@ -9,6 +9,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Table(name = "chat_rooms")
 public class ChatRoom {
     @Id
     private String id;

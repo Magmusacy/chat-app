@@ -5,7 +5,7 @@ services:
     container_name: chatapp_db
     restart: always
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: chatapp
       POSTGRES_USER: chatuser

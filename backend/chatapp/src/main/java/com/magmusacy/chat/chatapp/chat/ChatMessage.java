@@ -13,12 +13,13 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 @NoArgsConstructor
 @Entity
+@Table(name = "chat_messages")
 public class ChatMessage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     @NonNull
-    private LocalDateTime createdAt;
+    private LocalDateTime timestamp;
     @NonNull
     private String content;
 
