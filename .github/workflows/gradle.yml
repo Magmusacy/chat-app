@@ -41,6 +41,8 @@ jobs:
         workdir: backend/chatapp
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Deploy to render
+      run: curl ${{ secrets.RENDER_HOOK }}
 
   dependency-submission:
 
