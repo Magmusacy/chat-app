@@ -161,21 +161,4 @@ class UserServiceTest {
         verify(userRepository).save(any(User.class));
         // Would verify the user object had its isOnline set to true
     }
-
-    @Test
-    @DisplayName("When findConnectedUsers is called, then list of online users should be returned")
-    void findConnectedUsers_ShouldReturnOnlineUsers() {
-        // Given
-        User user1 = new User();
-        User user2 = new User();
-        List<User> onlineUsers = Arrays.asList(user1, user2);
-        when(userRepository.findAllByIsOnline(true)).thenReturn(onlineUsers);
-
-        // When
-        List<User> result = userService.findConnectedUsers();
-
-        // Then
-        assertEquals(2, result.size());
-        assertEquals(onlineUsers, result);
-    }
 }

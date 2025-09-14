@@ -31,7 +31,8 @@ public class JwtService {
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 24))
+//TODO change expiration behaviour
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 240000))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }

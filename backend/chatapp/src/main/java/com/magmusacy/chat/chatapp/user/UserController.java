@@ -17,27 +17,6 @@ public class UserController {
     private final UserService userService;
     private final ServerProperties serverProperties;
 
-    @MessageMapping("/user.addUser")
-    @SendTo("/user/topic")
-    public User addUser(@Payload User user) {
-        userService.saveUser(user);
-        return user;
-    }
-
-    @MessageMapping("/user.disconnectUser")
-    @SendTo("/user/topic")
-    public User disconnect(
-            @Payload User user
-    ) {
-        userService.disconnectUser(user);
-        return user;
-    }
-
-    @GetMapping("/users")
-    public ResponseEntity<List<UserDTO>> findAllUsers() {
-        return ResponseEntity.ok(userService.findAllUsers());
-    }
-
     @GetMapping("/user/me")
     public ResponseEntity<UserMeDTO> getUserInfo() {
         return ResponseEntity.ok(userService.getUserInfo());

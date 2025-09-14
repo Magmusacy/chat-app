@@ -38,6 +38,13 @@ public class UserService implements UserDetailsService {
         userRepository.save(user);
     }
 
+    public UserDTO setUserOnline(int userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("Wrong userId"));
+        user.setIsOnline(true);
+        user.setLastSeen(null);
+        return new UserDTO(user.getId(), user.getName(), user.getIsOnline(), user.getLastSeen());
+    }
+
     public void disconnectUser(User user) {
         Optional<User> connectedUser = userRepository.findById(user.getId());
         connectedUser.ifPresent(u -> {
@@ -56,7 +63,19 @@ public class UserService implements UserDetailsService {
     }
 
     public List<UserDTO> findAllUsers() {
-        return userRepository.findAll().stream().map(user -> new UserDTO(user.getId(), user.getName())).toList();
+        return userRepository.findAll().stream().map(user -> new UserDTO(user.getId(), user.getName(), user.getIsOnline(), user.getLastSeen())).toList();
+    }
+
+    public void handleUserLogout(User user) {
+        user.setIsOnline(false);
+        user.setLastSeen(LocalDateTime.now());
+        userRepository.save(user);
+    }
+
+    public void handleUserLogin(User user) {
+        user.setIsOnline(true);
+        user.setLastSeen(null);
+        userRepository.save(user);
     }
 
     public Optional<User> findById(int id) {
