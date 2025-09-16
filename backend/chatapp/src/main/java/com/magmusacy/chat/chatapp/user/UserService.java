@@ -2,6 +2,7 @@ package com.magmusacy.chat.chatapp.user;
 
 import com.magmusacy.chat.chatapp.auth.dto.RegisterRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -16,7 +17,6 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
-
     private final UserRepository userRepository;
 
     public User createUser(RegisterRequest request, PasswordEncoder passwordEncoder) {

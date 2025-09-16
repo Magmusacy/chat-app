@@ -26,7 +26,7 @@ public class User implements UserDetails {
     private String email;
     private String name;
     private String password;
-    private Boolean isOnline;
+    private Boolean isOnline = false;
     private LocalDateTime lastSeen;
 
     @Transient

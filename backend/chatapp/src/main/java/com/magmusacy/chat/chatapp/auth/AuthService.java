@@ -23,12 +23,10 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
-    private final SimpMessagingTemplate messagingTemplate;
 
     public AuthenticationResponse register(RegisterRequest request) {
         User user = userService.createUser(request, passwordEncoder);
         String jwtToken = jwtService.generateToken(user);
-        messagingTemplate.convertAndSend("/topic/users", userService.findAllUsers());
         return new AuthenticationResponse((jwtToken));
     }
 
@@ -38,9 +36,7 @@ public class AuthService {
         );
 
         User user = userService.findByEmail(request.email());
-        user.setIsOnline(true);
         String jwtToken = jwtService.generateToken(user);
-        messagingTemplate.convertAndSend("/topic/users", userService.findAllUsers());
         return new AuthenticationResponse((jwtToken));
     }
 }

@@ -42,23 +42,12 @@ public class JwtInterceptor implements ChannelInterceptor {
                                 userDetails, null, userDetails.getAuthorities()
                         );
 
-                        User user = userService.findByEmail(username);
-                        userService.handleUserLogin(user);
-
 //                       This could be authToken.getPrincipal() ???
                         accessor.setUser(authToken);
                     }
                 }
             } else {
                 throw new IllegalStateException("No JWT token supplied.");
-            }
-        }
-
-        if (StompCommand.DISCONNECT.equals(accessor.getCommand())) {
-            Principal potentialUser = accessor.getUser();
-            if (potentialUser != null) {
-                User user = userService.findByEmail(potentialUser.getName());
-                userService.handleUserLogout(user);
             }
         }
 
