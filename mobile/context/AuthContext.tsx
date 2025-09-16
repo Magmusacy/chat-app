@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 interface User {
   name: string;
   email: string;
+  token: string;
 }
 
 interface AuthContextType {
@@ -31,7 +32,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const validateUser = async () => {
       const token = await SecureStore.getItemAsync("token");
-
       if (!token) {
         setUser(null);
       } else {
@@ -54,7 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       });
 
-      return await userInfoResponse.json();
+      const responseJson = await userInfoResponse.json();
+      return { ...responseJson, token };
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Network error";
       setErrorMessage(errorMsg);
@@ -103,6 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
+    console.log("hej");
     try {
       const loginResponse = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
@@ -135,7 +137,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logOut = async () => {
-    console.log("test");
     await SecureStore.deleteItemAsync("token");
     setUser(null);
   };

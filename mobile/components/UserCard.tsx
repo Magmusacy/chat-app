@@ -1,35 +1,32 @@
-import { Image, Text, View } from "react-native";
+import { OtherUser } from "@/types/OtherUser";
+import { Text, View } from "react-native";
 
-interface UserCardProps {
-  name: string;
-  avatar?: string;
-}
-
-export default function UserCard({ name, avatar }: UserCardProps) {
-  // Get the initials from the name for the avatar fallback
-  const initials = name
+export default function UserCard({ user }: { user: OtherUser }) {
+  const initials = user.name
     .split(" ")
-    .map((word) => word[0])
+    .map((word: string) => word[0])
     .join("")
     .toUpperCase()
     .substring(0, 2);
 
   return (
     <View className="flex-row items-center bg-[#23293a] rounded-lg p-4 m-2">
-      {avatar ? (
-        <Image
-          source={{ uri: avatar }}
-          className="w-12 h-12 rounded-full bg-gray-700"
-        />
-      ) : (
-        <View className="w-12 h-12 rounded-full bg-gray-700 items-center justify-center">
-          <Text className="text-white font-bold text-lg">{initials}</Text>
-        </View>
-      )}
+      <View className="w-12 h-12 rounded-full bg-gray-700 items-center justify-center">
+        <Text className="text-white font-bold text-lg">{initials}</Text>
+      </View>
 
-      {/* User Name */}
       <View className="ml-4 flex-1">
-        <Text className="text-white font-medium text-lg">{name}</Text>
+        <Text className="text-white font-medium text-lg">{user.name}</Text>
+      </View>
+
+      <View className="ml-4 justify-end">
+        <Text className="text-white font-medium text-lg">
+          {user.isOnline ? (
+            <Text className="color-green-500">online</Text>
+          ) : (
+            <Text className="color-red-500">offline</Text>
+          )}
+        </Text>
       </View>
     </View>
   );
