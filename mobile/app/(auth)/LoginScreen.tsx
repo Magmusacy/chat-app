@@ -1,13 +1,6 @@
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
-import {
-  Button,
-  KeyboardAvoidingView,
-  Platform,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function LoginScreen({
   setIsSignIn,
@@ -19,21 +12,17 @@ export default function LoginScreen({
   const { login, errorMessage } = useAuth();
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
-      className="flex-1 justify-center items-center p-6 bg-theme text-white"
-    >
+    <>
       <View className="w-full max-w-sm space-y-4 flex gap-4">
         <TextInput
-          className="w-full h-12 px-4 border border-gray-300 rounded-lg text-white"
+          className="w-100 h-16 pt-4 pb-4 border-b-2 border-blue-500 text-white bg-transparent mb-4"
           placeholder="Username"
           placeholderTextColor="#9ca3af"
           value={name}
           onChangeText={setName}
         />
         <TextInput
-          className="w-full h-12 px-4 border border-gray-300 rounded-lg text-white"
+          className="w-100 h-16 pt-4 pb-4 border-b-2 border-blue-500 text-white bg-transparent mb-4"
           placeholder="Password"
           placeholderTextColor="#9ca3af"
           value={password}
@@ -41,15 +30,14 @@ export default function LoginScreen({
           secureTextEntry
         />
 
-        <View className="mt-4">
-          <Button
-            title="Log in"
-            color="#3b82f6"
-            onPress={() => {
-              login(name, password);
-            }}
-          />
-        </View>
+        <TouchableOpacity
+          className="mt-4 w-full h-12 bg-blue-500 rounded-lg flex items-center justify-center active:bg-blue-700"
+          onPress={() => {
+            login(name, password);
+          }}
+        >
+          <Text className="text-white text-lg font-semibold">Log in</Text>
+        </TouchableOpacity>
       </View>
       {errorMessage && (
         <View className="mt-4">
@@ -66,6 +54,6 @@ export default function LoginScreen({
           Sign Up
         </Text>
       </Text>
-    </KeyboardAvoidingView>
+    </>
   );
 }

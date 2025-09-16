@@ -91,7 +91,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const registerJson: { token: string } = await registerResponse.json();
-      // login(email, password);
       setUser(await getUserInfo(registerJson.token));
       await SecureStore.setItemAsync("token", registerJson.token);
       return null;
@@ -104,7 +103,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
-    console.log("hej");
     try {
       const loginResponse = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
