@@ -25,6 +25,7 @@ public class UserService implements UserDetailsService {
         } else if (userRepository.existsByEmail(request.email())) {
             throw new UserAlreadyExistsException("This email is already in use");
         }
+
         User user = new User();
         user.setEmail(request.email());
         user.setName(request.name());
@@ -35,6 +36,13 @@ public class UserService implements UserDetailsService {
     public void saveUser(User user) {
         user.setIsOnline(true);
         userRepository.save(user);
+    }
+
+    public UserDTO setUserOnline(int userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("Wrong userId"));
+        user.setIsOnline(true);
+        user.setLastSeen(null);
+        return new UserDTO(user.getId(), user.getName(), user.getIsOnline(), user.getLastSeen());
     }
 
     public void disconnectUser(User user) {
@@ -54,8 +62,20 @@ public class UserService implements UserDetailsService {
         });
     }
 
-    public List<User> findConnectedUsers() {
-        return userRepository.findAllByIsOnline(true);
+    public List<UserDTO> findAllUsers() {
+        return userRepository.findAll().stream().map(user -> new UserDTO(user.getId(), user.getName(), user.getIsOnline(), user.getLastSeen())).toList();
+    }
+
+    public void handleUserLogout(User user) {
+        user.setIsOnline(false);
+        user.setLastSeen(LocalDateTime.now());
+        userRepository.save(user);
+    }
+
+    public void handleUserLogin(User user) {
+        user.setIsOnline(true);
+        user.setLastSeen(null);
+        userRepository.save(user);
     }
 
     public Optional<User> findById(int id) {
