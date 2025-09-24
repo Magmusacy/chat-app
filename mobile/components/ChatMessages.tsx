@@ -90,7 +90,7 @@ export default function ChatMessages({
               </View>
             </TouchableOpacity>
           )}
-          keyExtractor={(item) => item.timestamp}
+          keyExtractor={(item) => String(item.id)}
           contentContainerClassName="p-5"
           alignItemsAtEnd
           maintainScrollAtEnd

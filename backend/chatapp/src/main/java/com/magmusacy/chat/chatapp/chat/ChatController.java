@@ -1,5 +1,7 @@
 package com.magmusacy.chat.chatapp.chat;
 
+import com.magmusacy.chat.chatapp.user.User;
+import com.magmusacy.chat.chatapp.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -15,22 +17,33 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChatController {
     private final SimpMessagingTemplate messagingTemplate;
+    private final UserService userService;
     private final ChatMessageService chatMessageService;
 
     @MessageMapping("/chat")
     public void processMessage(
             @Payload ChatMessageDTO messageDTO
     ) {
-        ChatMessage savedMessage = chatMessageService.save(messageDTO);
+        ChatMessage message = chatMessageService.save(messageDTO);
+        User recipient = userService.findById(messageDTO.recipientId()).orElseThrow(() -> new IllegalArgumentException("Wrong recipient ID"));
+        ChatMessageResponseDTO responseDTO = new ChatMessageResponseDTO(
+                message.getId(),
+                messageDTO.content(),
+                messageDTO.senderId(),
+                messageDTO.recipientId(),
+                messageDTO.chatRoomId(),
+                message.getTimestamp()
+        );
+
         messagingTemplate.convertAndSendToUser(
-                Integer.toString(messageDTO.recipientId()),
-                "/queue/messages",
-                messageDTO
+                recipient.getEmail(),
+                String.format("/chat/%s", messageDTO.recipientId()),
+                responseDTO
         );
     }
 
     @GetMapping("/messages/{senderId}/{recipientId}")
-    public ResponseEntity<List<ChatMessage>> findChatMessages(
+    public ResponseEntity<List<ChatMessageResponseDTO>> findChatMessages(
             @PathVariable("senderId") int senderId,
             @PathVariable("recipientId") int recipientId
     ) {

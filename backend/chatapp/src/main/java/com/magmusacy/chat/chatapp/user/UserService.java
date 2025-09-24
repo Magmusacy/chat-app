@@ -97,6 +97,6 @@ public class UserService implements UserDetailsService {
     public UserMeDTO getUserInfo() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException(""));
-        return new UserMeDTO(user.getName(), user.getEmail());
+        return new UserMeDTO(user.getId(), user.getName(), user.getEmail());
     }
 }

@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useWebSocket } from "@/context/WebSocketContext";
 import { theme } from "@/theme";
 import { Message } from "@/types/Message";
+import { chatRoomIdResolver } from "@/utils/chat-path-resolver";
 import Feather from "@expo/vector-icons/Feather";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { format, formatDistanceToNow, isToday, isYesterday } from "date-fns";
@@ -55,7 +56,7 @@ export default function Chat() {
     trueHeaderHeight.current = headerHeight;
   }, []);
 
-  const recipent = allUsers.find((user) => user.id === params.recipientId);
+  const recipient = allUsers.find((user) => user.id === params.recipientId);
 
   const formatLastSeen = useCallback((lastSeen: string | null): string => {
     if (!lastSeen) return "Never";
@@ -77,29 +78,29 @@ export default function Chat() {
   }, []);
 
   useEffect(() => {
-    if (!recipent) return;
+    if (!recipient) return;
     navigation.setOptions({
       headerTitle: () => (
         <View className="flex-col items-start w-full pl-2">
-          <Text className="text-white font-bold text-lg">{recipent.name}</Text>
+          <Text className="text-white font-bold text-lg">{recipient.name}</Text>
           <View className="flex-row items-center">
             <View
               className={`w-2 h-2 rounded-full mr-1 ${
-                recipent.isOnline ? "bg-success" : "bg-textMuted"
+                recipient.isOnline ? "bg-success" : "bg-textMuted"
               }`}
             />
             <Text className="text-textMuted text-xs">
-              {recipent.isOnline
+              {recipient.isOnline
                 ? "Online"
-                : recipent.lastSeen
-                  ? `Last seen ${formatLastSeen(recipent.lastSeen)}`
+                : recipient.lastSeen
+                  ? `Last seen ${formatLastSeen(recipient.lastSeen)}`
                   : "Offline"}
             </Text>
           </View>
         </View>
       ),
     });
-  }, [recipent, navigation, formatLastSeen]);
+  }, [recipient, navigation, formatLastSeen]);
 
   const fetchMessages = useCallback(
     async (senderId: number, recipientId: number, isRetry = false) => {
@@ -141,20 +142,46 @@ export default function Chat() {
     fetchMessages(params.senderId, params.recipientId, true);
   };
 
-  const initialLoadDone = useRef(false);
+  const handleSendMessage = () => {
+    const messageToSend = {
+      content: message,
+      senderId: user!.id,
+      recipientId: recipient!.id,
+      chatRoomId: chatRoomIdResolver(user!.id, recipient!.id),
+    };
+
+    client?.publish({
+      destination: "/app/chat",
+      body: JSON.stringify(messageToSend),
+    });
+
+    const tempMessage = {
+      ...messageToSend,
+      id: Math.max(...allMessages.map((m) => m.id)) + 1,
+      timestamp: new Date().toISOString(),
+    };
+
+    setAllMessages((prev) => [...prev, tempMessage]);
+  };
 
   useEffect(() => {
-    if (!initialLoadDone.current && client) {
+    if (client) {
       fetchMessages(params.senderId, params.recipientId, true);
-      initialLoadDone.current = true;
-    } else if (!initialLoadDone.current && !client) {
+      client.subscribe(`/user/chat/${user!.id}`, (message) => {
+        const newMessage: Message = JSON.parse(message.body);
+        setAllMessages((prev) => [...prev, newMessage]);
+      });
+    } else if (!client) {
       setIsLoading(false);
       setError({
         hasError: true,
         message: "Couldn't connect to server",
       });
-      initialLoadDone.current = true;
     }
+
+    return () => {
+      client!.unsubscribe(`/user/chat/${recipient!.id}`);
+    };
   }, [client, params.senderId, params.recipientId, fetchMessages]);
 
   if (isLoading) {
@@ -221,6 +248,7 @@ export default function Chat() {
           <TouchableOpacity
             disabled={message.length === 0}
             className={`bg-primary w-14 h-14 rounded-full items-center justify-center ${message.length > 0 ? "" : "opacity-20"}`}
+            onPress={handleSendMessage}
           >
             <Feather name="send" size={28} color="white" />
           </TouchableOpacity>

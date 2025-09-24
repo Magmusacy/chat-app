@@ -31,9 +31,17 @@ public class ChatMessageService {
         return chatMessageRepository.save(chatMessage);
     }
 
-    public List<ChatMessage> findChatMessages(int senderId, int recipientId) {
+    public List<ChatMessageResponseDTO> findChatMessages(int senderId, int recipientId) {
         User sender = userService.findById(senderId).orElseThrow();
         User recipient = userService.findById(recipientId).orElseThrow();
-        return chatMessageRepository.findBySenderAndRecipient(sender, recipient);
+        return chatMessageRepository.findBySenderAndRecipient(sender, recipient).stream().map(m -> new ChatMessageResponseDTO(
+                m.getId(),
+                m.getContent(),
+                m.getSender().getId(),
+                m.getRecipient().getId(),
+                m.getChatRoom().getId(),
+                m.getTimestamp()
+                )
+        ).toList();
     }
 }
