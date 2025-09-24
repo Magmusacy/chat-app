@@ -1,20 +1,35 @@
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import WebSocketProvider from "@/context/WebSocketContext";
+
+import { theme } from "@/theme";
 import { Stack } from "expo-router";
+import * as SystemUI from "expo-system-ui";
+import { KeyboardProvider } from "react-native-keyboard-controller";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
 
 function AppContent() {
   const { user } = useAuth();
+  const themeColor = "#23293a";
   console.log("tried to log in");
+  SystemUI.setBackgroundColorAsync(themeColor);
 
   return (
     <Stack
       screenOptions={{
-        contentStyle: { backgroundColor: "#23293a" },
+        contentStyle: { backgroundColor: themeColor },
       }}
     >
       <Stack.Protected guard={user != null}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="chat/[senderId]/[recipientId]"
+          options={{
+            headerTintColor: "white",
+            headerStyle: { backgroundColor: theme.colors.background },
+            headerShadowVisible: true,
+          }}
+        />
       </Stack.Protected>
 
       <Stack.Protected guard={user == null}>
@@ -32,10 +47,14 @@ function AppContent() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <WebSocketProvider>
-        <AppContent />
-      </WebSocketProvider>
-    </AuthProvider>
+    <KeyboardProvider>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <WebSocketProvider>
+            <AppContent />
+          </WebSocketProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </KeyboardProvider>
   );
 }

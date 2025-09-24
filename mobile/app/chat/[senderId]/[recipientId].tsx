@@ -1,0 +1,231 @@
+import ChatMessages from "@/components/ChatMessages";
+import { API_URL } from "@/config";
+import { useAuth } from "@/context/AuthContext";
+import { useWebSocket } from "@/context/WebSocketContext";
+import { theme } from "@/theme";
+import { Message } from "@/types/Message";
+import Feather from "@expo/vector-icons/Feather";
+import { useHeaderHeight } from "@react-navigation/elements";
+import { format, formatDistanceToNow, isToday, isYesterday } from "date-fns";
+import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+interface Params {
+  senderId: number;
+  recipientId: number;
+}
+
+interface ErrorState {
+  hasError: boolean;
+  message: string;
+}
+
+export default function Chat() {
+  const { senderId, recipientId } = useLocalSearchParams();
+  const { user } = useAuth();
+  const { client, allUsers } = useWebSocket();
+  const [allMessages, setAllMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<ErrorState | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [message, setMessage] = useState<string>("");
+  const navigation = useNavigation();
+  const trueHeaderHeight = useRef<number>(0);
+  const params: Params = {
+    senderId: Array.isArray(senderId)
+      ? parseInt(senderId[0], 10)
+      : parseInt(senderId, 10),
+    recipientId: Array.isArray(recipientId)
+      ? parseInt(recipientId[0], 10)
+      : parseInt(recipientId, 10),
+  };
+
+  // uhh idk this is workaround but idk how to fix it xd
+  const headerHeight = useHeaderHeight();
+  useEffect(() => {
+    trueHeaderHeight.current = headerHeight;
+  }, []);
+
+  const recipent = allUsers.find((user) => user.id === params.recipientId);
+
+  const formatLastSeen = useCallback((lastSeen: string | null): string => {
+    if (!lastSeen) return "Never";
+    const lastSeenDate = new Date(lastSeen);
+    const now = new Date();
+    if (now.getTime() - lastSeenDate.getTime() < 5 * 60 * 1000) {
+      return "Just now";
+    }
+    if (isToday(lastSeenDate)) {
+      return `Today at ${format(lastSeenDate, "HH:mm a")}`;
+    }
+    if (isYesterday(lastSeenDate)) {
+      return `Yesterday at ${format(lastSeenDate, "HH:mm a")}`;
+    }
+    if (now.getTime() - lastSeenDate.getTime() < 7 * 24 * 60 * 60 * 1000) {
+      return formatDistanceToNow(lastSeenDate, { addSuffix: true });
+    }
+    return format(lastSeenDate, "MMM d, yyyy");
+  }, []);
+
+  useEffect(() => {
+    if (!recipent) return;
+    navigation.setOptions({
+      headerTitle: () => (
+        <View className="flex-col items-start w-full pl-2">
+          <Text className="text-white font-bold text-lg">{recipent.name}</Text>
+          <View className="flex-row items-center">
+            <View
+              className={`w-2 h-2 rounded-full mr-1 ${
+                recipent.isOnline ? "bg-success" : "bg-textMuted"
+              }`}
+            />
+            <Text className="text-textMuted text-xs">
+              {recipent.isOnline
+                ? "Online"
+                : recipent.lastSeen
+                  ? `Last seen ${formatLastSeen(recipent.lastSeen)}`
+                  : "Offline"}
+            </Text>
+          </View>
+        </View>
+      ),
+    });
+  }, [recipent, navigation, formatLastSeen]);
+
+  const fetchMessages = useCallback(
+    async (senderId: number, recipientId: number, isRetry = false) => {
+      try {
+        if (isRetry) setIsRetrying(true);
+        setError(null);
+
+        const response = await fetch(
+          `${API_URL}/messages/${senderId}/${recipientId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${user!.token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        setAllMessages(Array.isArray(data) ? data : []);
+      } catch {
+        console.error("Error fetching messages");
+
+        setError({
+          hasError: true,
+          message: "Couldn't load the messages",
+        });
+      } finally {
+        setIsLoading(false);
+        setIsRetrying(false);
+      }
+    },
+    [user]
+  );
+
+  const handleRetry = () => {
+    fetchMessages(params.senderId, params.recipientId, true);
+  };
+
+  const initialLoadDone = useRef(false);
+
+  useEffect(() => {
+    if (!initialLoadDone.current && client) {
+      fetchMessages(params.senderId, params.recipientId, true);
+      initialLoadDone.current = true;
+    } else if (!initialLoadDone.current && !client) {
+      setIsLoading(false);
+      setError({
+        hasError: true,
+        message: "Couldn't connect to server",
+      });
+      initialLoadDone.current = true;
+    }
+  }, [client, params.senderId, params.recipientId, fetchMessages]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-theme justify-center items-center">
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text className="text-white mt-4">Loading messages...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (error?.hasError) {
+    return (
+      <SafeAreaView className="flex-1 bg-theme justify-center items-center p-6">
+        <View className="bg-red-900/20 border border-red-500 rounded-lg p-6 w-full max-w-sm">
+          <Text className="text-white mb-4">{error.message}</Text>
+
+          <TouchableOpacity
+            onPress={handleRetry}
+            disabled={isRetrying}
+            className="bg-blue-600 rounded-lg py-3 px-6 disabled:opacity-50"
+          >
+            {isRetrying ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <Text className="text-white text-center font-semibold">
+                Try again
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView className="flex-1 bg-surface" edges={["bottom"]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior="padding"
+        keyboardVerticalOffset={trueHeaderHeight.current}
+      >
+        <View className="flex-1 bg-background">
+          <ChatMessages allMessages={allMessages} />
+        </View>
+
+        <View className="p-4 border-t border-borderLight/30 bg-surface flex flex-row items-center gap-3">
+          <View className="flex-1 flex-row items-center bg-surfaceLight rounded-full border border-border/50 px-4">
+            <TextInput
+              className="flex-1 h-14 text-textBase text-xl"
+              placeholder="Type your message..."
+              placeholderTextColor="#9ca3af"
+              value={message}
+              onChangeText={setMessage}
+            />
+            <TouchableOpacity className="ml-2">
+              <Feather
+                name="paperclip"
+                size={20}
+                color={theme.colors.textMuted}
+              />
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            disabled={message.length === 0}
+            className={`bg-primary w-14 h-14 rounded-full items-center justify-center ${message.length > 0 ? "" : "opacity-20"}`}
+          >
+            <Feather name="send" size={28} color="white" />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
