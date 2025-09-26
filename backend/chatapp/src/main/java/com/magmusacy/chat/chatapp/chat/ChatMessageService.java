@@ -18,8 +18,8 @@ public class ChatMessageService {
     private final UserService userService;
 
     public ChatMessage save(ChatMessageDTO messageDTO) {
-        User sender = userService.findById(messageDTO.senderId()).orElseThrow();
-        User recipient = userService.findById(messageDTO.recipientId()).orElseThrow();
+        User sender = userService.findById(messageDTO.senderId());
+        User recipient = userService.findById(messageDTO.recipientId());
 
         ChatRoom chatRoom = chatRoomService.getChatRoom(
                 sender,
@@ -28,12 +28,16 @@ public class ChatMessageService {
         ).orElseThrow();
 
         ChatMessage chatMessage = new ChatMessage(LocalDateTime.now(), messageDTO.content(), chatRoom, sender, recipient);
-        return chatMessageRepository.save(chatMessage);
+        chatRoom.setLatestMessage(chatMessage);
+        chatRoom.setReadStatus(false);
+        ChatMessage latestMessage = chatMessageRepository.save(chatMessage);
+        chatRoomService.save(chatRoom);
+        return latestMessage;
     }
 
     public List<ChatMessageResponseDTO> findChatMessages(int senderId, int recipientId) {
-        User sender = userService.findById(senderId).orElseThrow();
-        User recipient = userService.findById(recipientId).orElseThrow();
+        User sender = userService.findById(senderId);
+        User recipient = userService.findById(recipientId);
         return chatMessageRepository.findBySenderAndRecipient(sender, recipient).stream().map(m -> new ChatMessageResponseDTO(
                 m.getId(),
                 m.getContent(),

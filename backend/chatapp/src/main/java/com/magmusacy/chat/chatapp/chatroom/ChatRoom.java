@@ -1,24 +1,31 @@
 package com.magmusacy.chat.chatapp.chatroom;
 
+import com.magmusacy.chat.chatapp.chat.ChatMessage;
 import com.magmusacy.chat.chatapp.user.User;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Builder
 @Table(name = "chat_rooms")
 public class ChatRoom {
     @Id
     private String id;
 
-    @ManyToOne
-    @JoinColumn(name = "sender_id")
-    private User sender;
+    @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private Set<ChatMessage> chatMessages = new HashSet<>();
 
-    @ManyToOne
-    @JoinColumn(name = "recipient_id")
-    private User recipient;
+    @OneToOne
+    @JoinColumn(name = "latest_message_id")
+    private ChatMessage latestMessage = null;
+
+    private boolean readStatus = false;
 }

@@ -5,9 +5,9 @@ import { useWebSocket } from "@/context/WebSocketContext";
 import { theme } from "@/theme";
 import { Message } from "@/types/Message";
 import { chatRoomIdResolver } from "@/utils/chat-path-resolver";
+import { formatLastSeen } from "@/utils/dates-format";
 import Feather from "@expo/vector-icons/Feather";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { format, formatDistanceToNow, isToday, isYesterday } from "date-fns";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -33,7 +33,7 @@ interface ErrorState {
 export default function Chat() {
   const { senderId, recipientId } = useLocalSearchParams();
   const { user } = useAuth();
-  const { client, allUsers } = useWebSocket();
+  const { client, allUsers, latestMessages } = useWebSocket();
   const [allMessages, setAllMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<ErrorState | null>(null);
@@ -49,6 +49,7 @@ export default function Chat() {
       ? parseInt(recipientId[0], 10)
       : parseInt(recipientId, 10),
   };
+  const recipient = allUsers.find((user) => user.id === params.recipientId);
 
   // uhh idk this is workaround but idk how to fix it xd
   const headerHeight = useHeaderHeight();
@@ -56,26 +57,19 @@ export default function Chat() {
     trueHeaderHeight.current = headerHeight;
   }, []);
 
-  const recipient = allUsers.find((user) => user.id === params.recipientId);
-
-  const formatLastSeen = useCallback((lastSeen: string | null): string => {
-    if (!lastSeen) return "Never";
-    const lastSeenDate = new Date(lastSeen);
-    const now = new Date();
-    if (now.getTime() - lastSeenDate.getTime() < 5 * 60 * 1000) {
-      return "Just now";
-    }
-    if (isToday(lastSeenDate)) {
-      return `Today at ${format(lastSeenDate, "HH:mm a")}`;
-    }
-    if (isYesterday(lastSeenDate)) {
-      return `Yesterday at ${format(lastSeenDate, "HH:mm a")}`;
-    }
-    if (now.getTime() - lastSeenDate.getTime() < 7 * 24 * 60 * 60 * 1000) {
-      return formatDistanceToNow(lastSeenDate, { addSuffix: true });
-    }
-    return format(lastSeenDate, "MMM d, yyyy");
-  }, []);
+  useEffect(() => {
+    if (!client || !user || !recipient) return;
+    const latestMessage = latestMessages.get(
+      chatRoomIdResolver(user.id, recipient.id)
+    );
+    if (!latestMessage || latestMessage.senderId === user.id) return;
+    client.publish({
+      destination: "/app/chat.read-latest-message",
+      body: JSON.stringify({
+        otherChatUser: recipient.id,
+      }),
+    });
+  }, [client, user, latestMessages, recipient]);
 
   useEffect(() => {
     if (!recipient) return;
@@ -100,7 +94,7 @@ export default function Chat() {
         </View>
       ),
     });
-  }, [recipient, navigation, formatLastSeen]);
+  }, [recipient, navigation]);
 
   const fetchMessages = useCallback(
     async (senderId: number, recipientId: number, isRetry = false) => {
@@ -108,14 +102,11 @@ export default function Chat() {
         if (isRetry) setIsRetrying(true);
         setError(null);
 
-        const response = await fetch(
-          `${API_URL}/messages/${senderId}/${recipientId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${user!.token}`,
-            },
-          }
-        );
+        const response = await fetch(`${API_URL}/messages/${recipientId}`, {
+          headers: {
+            Authorization: `Bearer ${user!.token}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -151,7 +142,7 @@ export default function Chat() {
     };
 
     client?.publish({
-      destination: "/app/chat",
+      destination: "/app/chat.send-message",
       body: JSON.stringify(messageToSend),
     });
 
@@ -167,7 +158,7 @@ export default function Chat() {
   useEffect(() => {
     if (client) {
       fetchMessages(params.senderId, params.recipientId, true);
-      client.subscribe(`/user/chat/${user!.id}`, (message) => {
+      client.subscribe(`/user/queue/messages-from-${user!.id}`, (message) => {
         const newMessage: Message = JSON.parse(message.body);
         setAllMessages((prev) => [...prev, newMessage]);
       });

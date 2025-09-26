@@ -97,7 +97,7 @@ export default function ChatMessages({
           maintainScrollAtEndThreshold={0.5}
           maintainVisibleContentPosition
           recycleItems={false}
-          estimatedItemSize={100}
+          estimatedItemSize={320}
           initialScrollIndex={allMessages.length}
           extraData={selectedMessageId}
         />

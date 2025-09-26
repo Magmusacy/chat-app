@@ -13,6 +13,27 @@ import java.util.Optional;
 public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
 
+    public ChatRoom save(ChatRoom chatRoom) {
+        return chatRoomRepository.save(chatRoom);
+    }
+
+    public ChatRoom setReadLatestMessageStatus(ChatRoom chatRoom, boolean status) {
+        chatRoom.setReadStatus(status);
+        return chatRoomRepository.save(chatRoom);
+    }
+
+    public List<LatestMessageResponseDTO> getAllLatestMessages(User currentUser) {
+        return chatRoomRepository.findAllLatestMessages(currentUser).stream().map(message -> new LatestMessageResponseDTO(
+                message.getChatRoom().isReadStatus(),
+                message.getSender().getId(),
+                message.getRecipient().getId(),
+                message.getContent(),
+                message.getChatRoom().getId(),
+                message.getTimestamp()
+                )
+        ).toList();
+    }
+
     public Optional<ChatRoom> getChatRoom(
             User sender,
             User recipient,
@@ -21,7 +42,7 @@ public class ChatRoomService {
         List<User> orderedUsers = getUsersInOrder(sender, recipient);
         User firstSender = orderedUsers.getFirst();
         User secondSender = orderedUsers.getLast();
-        return chatRoomRepository.findBySenderAndRecipient(firstSender, secondSender)
+        return chatRoomRepository.findById(generateChatRoomId(firstSender, secondSender))
         .or(() -> {
             if (createNewRoomIfNotExists) {
                 return Optional.of(createChat(firstSender, secondSender));
@@ -31,12 +52,18 @@ public class ChatRoomService {
     }
 
     private ChatRoom createChat(User firstSender, User secondSender) {
-        String chatId = String.format("%d_%d", firstSender.getId(), secondSender.getId());
+        String chatId = generateChatRoomId(firstSender, secondSender);
 
-        ChatRoom room = new ChatRoom(chatId, firstSender, secondSender);
+        ChatRoom room = ChatRoom.builder()
+                .id(chatId)
+                .build();
 
         chatRoomRepository.save(room);
         return room;
+    }
+
+    private String generateChatRoomId(User firstSender, User secondSender) {
+        return String.format("%d_%d", firstSender.getId(), secondSender.getId());
     }
 
     private List<User> getUsersInOrder(User user1, User user2) {
@@ -46,5 +73,4 @@ public class ChatRoomService {
             return List.of(user2, user1);
         }
     }
-
 }

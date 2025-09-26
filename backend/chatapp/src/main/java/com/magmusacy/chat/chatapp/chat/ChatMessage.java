@@ -4,7 +4,6 @@ import com.magmusacy.chat.chatapp.chatroom.ChatRoom;
 import com.magmusacy.chat.chatapp.user.User;
 import jakarta.persistence.*;
 import lombok.*;
-import org.antlr.v4.runtime.misc.NotNull;
 
 import java.time.LocalDateTime;
 

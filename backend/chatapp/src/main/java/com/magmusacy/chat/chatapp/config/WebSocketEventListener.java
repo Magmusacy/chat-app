@@ -39,6 +39,7 @@ public class WebSocketEventListener {
         messagingTemplate.convertAndSend("/topic/users", users);
     }
 
+    // this will not be good for pagination
     @EventListener
     public void handleWebSocketSubscribeListener(SessionSubscribeEvent event) {
         String destination = (String) event.getMessage().getHeaders().get("simpDestination");

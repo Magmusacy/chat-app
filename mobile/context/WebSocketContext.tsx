@@ -1,4 +1,5 @@
 import { API_URL } from "@/config";
+import { LatestMessage } from "@/types/LatestMessage";
 import { OtherUser } from "@/types/OtherUser";
 import { WebSocketContextType } from "@/types/WebSocketTypes";
 import { Client } from "@stomp/stompjs";
@@ -22,6 +23,9 @@ export default function WebSocketProvider({
   const [client, setClient] = useState<Client | null>(null);
   const { user } = useAuth();
   const [allUsers, setAllUsers] = useState<OtherUser[]>([]);
+  const [latestMessages, setLatestMessages] = useState<
+    Map<LatestMessage["chatRoomId"], LatestMessage>
+  >(new Map());
 
   useEffect(() => {
     if (!user) {
@@ -38,14 +42,26 @@ export default function WebSocketProvider({
       },
       onConnect: () => {
         webSocketClient.subscribe("/topic/users", (message) => {
-          const parsedUsers: OtherUser[] = JSON.parse(message.body);
+          const parsedUsers = JSON.parse(message.body) as OtherUser[];
           setAllUsers(parsedUsers);
         });
 
         webSocketClient.subscribe("/user/queue/users", (message) => {
-          const parsedUsers: OtherUser[] = JSON.parse(message.body);
+          const parsedUsers = JSON.parse(message.body) as OtherUser[];
           setAllUsers(parsedUsers);
         });
+
+        webSocketClient.subscribe(
+          "/user/queue/chat.latest-message-updated",
+          (message) => {
+            const latestMessage = JSON.parse(message.body) as LatestMessage;
+            setLatestMessages((prev) => {
+              const newMap = new Map(prev);
+              newMap.set(latestMessage.chatRoomId, latestMessage);
+              return newMap;
+            });
+          }
+        );
       },
       onDisconnect: () => console.log("Disconnected from Websocket"),
     });
@@ -60,8 +76,32 @@ export default function WebSocketProvider({
     };
   }, [user]);
 
+  useEffect(() => {
+    const getLatestMessages = async () => {
+      const response = await fetch(`${API_URL}/latest-messages`, {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data: LatestMessage[] = await response.json();
+      setLatestMessages((prev) => {
+        const newMap = new Map(prev);
+        data.forEach((msg) => {
+          newMap.set(msg.chatRoomId, msg);
+        });
+        return newMap;
+      });
+    };
+    getLatestMessages();
+  }, [user]);
+
   return (
-    <WebSocketContext.Provider value={{ allUsers, client }}>
+    <WebSocketContext.Provider value={{ latestMessages, allUsers, client }}>
       {children}
     </WebSocketContext.Provider>
   );

@@ -1,5 +1,6 @@
 package com.magmusacy.chat.chatapp.user;
 
+import com.magmusacy.chat.chatapp.chat.ChatMessage;
 import com.magmusacy.chat.chatapp.chatroom.ChatRoom;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -11,7 +12,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -29,13 +32,17 @@ public class User implements UserDetails {
     private Boolean isOnline = false;
     private LocalDateTime lastSeen;
 
-    @Transient
-    private List<ChatRoom> chatRooms;
-
     @Override
     public String getUsername() {
         return email;
     }
+
+    @OneToMany(mappedBy = "sender", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private Set<ChatMessage> sentMessages = new HashSet<>();
+
+    @OneToMany(mappedBy = "recipient", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private Set<ChatMessage> receivedMessages = new HashSet<>();
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
