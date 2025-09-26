@@ -1,3 +1,5 @@
+import { useAuth } from "@/context/AuthContext";
+import { useWebSocket } from "@/context/WebSocketContext";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
@@ -5,14 +7,31 @@ import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const { latestMessages } = useWebSocket();
+  const { user } = useAuth();
+
+  const unreadMessagesCount = [...latestMessages.values()].filter(
+    (msg) => !msg.readStatus && msg.senderId !== user?.id
+  ).length;
+
   return (
     <>
       <StatusBar style="light" />
       <Tabs
         screenOptions={{
           tabBarStyle: {
-            backgroundColor: "#23293a",
-            height: 60 + (insets.bottom > 0 ? insets.bottom : 0),
+            backgroundColor: "#2c3445",
+            height: 70 + (insets.bottom > 0 ? insets.bottom : 0),
+            elevation: 4,
+            borderTopWidth: 0,
+            justifyContent: "center",
+            alignItems: "center",
+          },
+          tabBarItemStyle: {
+            paddingTop: 4,
+          },
+          tabBarLabelStyle: {
+            fontSize: 12,
           },
           headerStyle: {
             backgroundColor: "#23293a",
@@ -24,7 +43,8 @@ export default function TabsLayout() {
           name="index"
           options={{
             title: "Chats",
-            tabBarBadge: 2,
+            tabBarBadge:
+              unreadMessagesCount > 0 ? unreadMessagesCount : undefined,
             tabBarBadgeStyle: {},
 
             tabBarIcon: ({ color, size }) => (

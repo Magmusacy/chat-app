@@ -4,6 +4,7 @@ import com.magmusacy.chat.chatapp.chatroom.ChatRoom;
 import com.magmusacy.chat.chatapp.chatroom.ChatRoomService;
 import com.magmusacy.chat.chatapp.user.User;
 import com.magmusacy.chat.chatapp.user.UserService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ public class ChatMessageService {
     private final ChatRoomService chatRoomService;
     private final UserService userService;
 
+    @Transactional
     public ChatMessage save(ChatMessageDTO messageDTO) {
         User sender = userService.findById(messageDTO.senderId());
         User recipient = userService.findById(messageDTO.recipientId());
@@ -28,9 +30,9 @@ public class ChatMessageService {
         ).orElseThrow();
 
         ChatMessage chatMessage = new ChatMessage(LocalDateTime.now(), messageDTO.content(), chatRoom, sender, recipient);
+        ChatMessage latestMessage = chatMessageRepository.save(chatMessage);
         chatRoom.setLatestMessage(chatMessage);
         chatRoom.setReadStatus(false);
-        ChatMessage latestMessage = chatMessageRepository.save(chatMessage);
         chatRoomService.save(chatRoom);
         return latestMessage;
     }

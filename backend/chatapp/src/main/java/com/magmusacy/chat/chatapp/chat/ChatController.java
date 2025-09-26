@@ -40,6 +40,15 @@ public class ChatController {
                 message.getTimestamp()
         );
 
+        LatestMessageResponseDTO latestMessageResponseDTO = new LatestMessageResponseDTO(
+                false,
+                messageDTO.senderId(),
+                messageDTO.recipientId(),
+                messageDTO.content(),
+                messageDTO.chatRoomId(),
+                message.getTimestamp()
+        );
+
         // send the message
         messagingTemplate.convertAndSendToUser(
                 recipient.getEmail(),
@@ -50,12 +59,12 @@ public class ChatController {
         messagingTemplate.convertAndSendToUser(
                 recipient.getEmail(),
                 "/queue/chat.latest-message-updated",
-                responseDTO
+                latestMessageResponseDTO
         );
         messagingTemplate.convertAndSendToUser(
                 principal.getName(),
                 "/queue/chat.latest-message-updated",
-                responseDTO
+                latestMessageResponseDTO
         );
     }
 

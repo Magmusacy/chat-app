@@ -50,6 +50,7 @@ export default function Chat() {
       : parseInt(recipientId, 10),
   };
   const recipient = allUsers.find((user) => user.id === params.recipientId);
+  const latestMessage = allMessages[allMessages.length - 1];
 
   // uhh idk this is workaround but idk how to fix it xd
   const headerHeight = useHeaderHeight();
@@ -69,7 +70,7 @@ export default function Chat() {
         otherChatUser: recipient.id,
       }),
     });
-  }, [client, user, latestMessages, recipient]);
+  }, [client, user, latestMessage, recipient]);
 
   useEffect(() => {
     if (!recipient) return;
