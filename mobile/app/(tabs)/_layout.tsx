@@ -1,5 +1,5 @@
-import { useAuth } from "@/context/AuthContext";
 import { useWebSocket } from "@/context/WebSocketContext";
+import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
@@ -8,10 +8,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const { latestMessages } = useWebSocket();
-  const { user } = useAuth();
+  const user = useAuthenticatedUser();
 
   const unreadMessagesCount = [...latestMessages.values()].filter(
-    (msg) => !msg.readStatus && msg.senderId !== user?.id
+    (msg) => !msg.readStatus && msg.senderId !== user.id
   ).length;
 
   return (

@@ -1,26 +1,26 @@
 import UsersHeader from "@/components/UsersHeader";
 import UsersList from "@/components/UsersList";
-import { useAuth } from "@/context/AuthContext";
 import { useWebSocket } from "@/context/WebSocketContext";
 import { chatRoomIdResolver } from "@/utils/chat-path-resolver";
+import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import { useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Users() {
-  const { user } = useAuth();
+  const user = useAuthenticatedUser();
   const { allUsers, latestMessages } = useWebSocket();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const navigation = useNavigation();
 
   const usersWithoutMessages = allUsers.filter((u) => {
-    const chatRoomId = chatRoomIdResolver(u.id, user!.id);
+    const chatRoomId = chatRoomIdResolver(u.id, user.id);
     return latestMessages.has(chatRoomId) ? null : u;
   });
 
   const filteredUsers = usersWithoutMessages.filter((unfilteredUser) => {
     // this is here but I want to make it impossible to message myself in the future
-    if (unfilteredUser.id === user?.id) return false;
+    if (unfilteredUser.id === user.id) return false;
     if (!searchQuery.trim()) return true;
 
     return unfilteredUser.name

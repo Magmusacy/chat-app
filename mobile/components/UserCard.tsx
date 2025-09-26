@@ -1,20 +1,20 @@
-import { useAuth } from "@/context/AuthContext";
 import { useWebSocket } from "@/context/WebSocketContext";
 import { OtherUser } from "@/types/OtherUser";
 import { chatRoomIdResolver } from "@/utils/chat-path-resolver";
 import { formatLastSeen, formatMessageTime } from "@/utils/dates-format";
+import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import { Text, View } from "react-native";
 
 export default function UserCard({ cardUser }: { cardUser: OtherUser }) {
-  const { user } = useAuth();
+  const user = useAuthenticatedUser();
   const { latestMessages } = useWebSocket();
 
   const latestMessage = latestMessages.get(
-    chatRoomIdResolver(user!.id, cardUser.id)
+    chatRoomIdResolver(user.id, cardUser.id)
   );
 
   const latestMessageStyle =
-    latestMessage?.senderId === user!.id
+    latestMessage?.senderId === user.id
       ? "text-textMuted"
       : latestMessage?.readStatus
         ? "text-gray-300"
@@ -53,7 +53,7 @@ export default function UserCard({ cardUser }: { cardUser: OtherUser }) {
             {latestMessage ? (
               <View className="flex-row items-center">
                 <View className="flex-row items-center flex-1 mr-2">
-                  {latestMessage.senderId === user!.id && (
+                  {latestMessage.senderId === user.id && (
                     <Text className="text-textMuted mr-1 text-sm">You: </Text>
                   )}
                   <Text

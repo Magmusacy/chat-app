@@ -1,4 +1,4 @@
-import { useAuth } from "@/context/AuthContext";
+import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import Feather from "@expo/vector-icons/Feather";
 import { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -11,7 +11,7 @@ interface UsersHeaderParams {
 export default function UsersHeader({
   handleSetSearchQuery,
 }: UsersHeaderParams) {
-  const { user } = useAuth();
+  const user = useAuthenticatedUser();
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   return (

@@ -1,27 +1,7 @@
 import { API_URL } from "@/config";
+import { AuthContextType, User } from "@/types/AuthContextTypes";
 import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState } from "react";
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  token: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<string | null>;
-  register: (
-    email: string,
-    name: string,
-    password: string,
-    passwordConfirmation: string
-  ) => Promise<string | null>;
-  logOut: () => Promise<void>;
-  isLoadingUser: boolean;
-  errorMessage: string | null;
-}
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -155,5 +135,10 @@ export function useAuth() {
   if (!context) {
     throw new Error("useAuth must be used within AuthProvider");
   }
+
+  if (!context.user) {
+    throw new Error("User must be authenticated to use this component");
+  }
+
   return context;
 }

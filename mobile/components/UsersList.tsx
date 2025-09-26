@@ -1,24 +1,22 @@
-import { useAuth } from "@/context/AuthContext";
 import { OtherUser } from "@/types/OtherUser";
+import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import { LegendList } from "@legendapp/list";
 import { useRouter } from "expo-router";
 import { Text, TouchableOpacity, View } from "react-native";
 import UserCard from "./UserCard";
 
 export default function UsersList({ list }: { list: OtherUser[] }) {
-  const { user } = useAuth();
+  const user = useAuthenticatedUser();
   const router = useRouter();
 
   const handleUserPress = (recipientId: number) => {
-    if (user?.id) {
-      router.push({
-        pathname: "/chat/[senderId]/[recipientId]",
-        params: {
-          senderId: String(user.id),
-          recipientId: String(recipientId),
-        },
-      });
-    }
+    router.push({
+      pathname: "/chat/[senderId]/[recipientId]",
+      params: {
+        senderId: String(user.id),
+        recipientId: String(recipientId),
+      },
+    });
   };
 
   return (

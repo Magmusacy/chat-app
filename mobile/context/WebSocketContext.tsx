@@ -2,6 +2,7 @@ import { API_URL } from "@/config";
 import { LatestMessage } from "@/types/LatestMessage";
 import { OtherUser } from "@/types/OtherUser";
 import { WebSocketContextType } from "@/types/WebSocketTypes";
+import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import { Client } from "@stomp/stompjs";
 import {
   createContext,
@@ -11,7 +12,6 @@ import {
   useState,
 } from "react";
 import SockJS from "sockjs-client";
-import { useAuth } from "./AuthContext";
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
@@ -21,17 +21,13 @@ export default function WebSocketProvider({
   children: ReactNode;
 }) {
   const [client, setClient] = useState<Client | null>(null);
-  const { user } = useAuth();
+  const user = useAuthenticatedUser();
   const [allUsers, setAllUsers] = useState<OtherUser[]>([]);
   const [latestMessages, setLatestMessages] = useState<
     Map<LatestMessage["chatRoomId"], LatestMessage>
   >(new Map());
 
   useEffect(() => {
-    if (!user) {
-      setAllUsers([]);
-      return;
-    }
 
     const webSocketClient = new Client({
       webSocketFactory: () => new SockJS(`${API_URL}/ws`),
@@ -80,7 +76,7 @@ export default function WebSocketProvider({
     const getLatestMessages = async () => {
       const response = await fetch(`${API_URL}/latest-messages`, {
         headers: {
-          Authorization: `Bearer ${user?.token}`,
+          Authorization: `Bearer ${user.token}`,
         },
       });
 

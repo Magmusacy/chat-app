@@ -31,3 +31,35 @@ export const formatMessageTime = (timestamp: string): string => {
     return format(date, "dd/MM");
   }
 };
+
+export const formatTimestamp = (timestamp: string) => {
+  const date = new Date(timestamp);
+
+  // Format: "Today, 3:45 PM" or "Yesterday, 3:45 PM" or "Sep 24, 3:45 PM"
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  // Format time
+  const timeOptions: Intl.DateTimeFormatOptions = {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  };
+  const timeString = date.toLocaleTimeString(undefined, timeOptions);
+
+  // Check if date is today, yesterday, or earlier
+  if (date.toDateString() === today.toDateString()) {
+    return `Today, ${timeString}`;
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return `Yesterday, ${timeString}`;
+  } else {
+    // Format: "Sep 24"
+    const dateOptions: Intl.DateTimeFormatOptions = {
+      month: "short",
+      day: "numeric",
+    };
+    const dateString = date.toLocaleDateString(undefined, dateOptions);
+    return `${dateString}, ${timeString}`;
+  }
+};

@@ -1,11 +1,11 @@
 import ChatMessages from "@/components/ChatMessages";
 import { API_URL } from "@/config";
-import { useAuth } from "@/context/AuthContext";
 import { useWebSocket } from "@/context/WebSocketContext";
 import { theme } from "@/theme";
 import { Message } from "@/types/Message";
 import { chatRoomIdResolver } from "@/utils/chat-path-resolver";
 import { formatLastSeen } from "@/utils/dates-format";
+import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import Feather from "@expo/vector-icons/Feather";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useLocalSearchParams, useNavigation } from "expo-router";
@@ -32,7 +32,7 @@ interface ErrorState {
 
 export default function Chat() {
   const { senderId, recipientId } = useLocalSearchParams();
-  const { user } = useAuth();
+  const user = useAuthenticatedUser();
   const { client, allUsers, latestMessages } = useWebSocket();
   const [allMessages, setAllMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,6 +50,7 @@ export default function Chat() {
       : parseInt(recipientId, 10),
   };
   const recipient = allUsers.find((user) => user.id === params.recipientId);
+
   const latestMessage = allMessages[allMessages.length - 1];
 
   // uhh idk this is workaround but idk how to fix it xd
@@ -59,7 +60,7 @@ export default function Chat() {
   }, []);
 
   useEffect(() => {
-    if (!client || !user || !recipient) return;
+    if (!client || !recipient) return;
     const latestMessage = latestMessages.get(
       chatRoomIdResolver(user.id, recipient.id)
     );
@@ -105,7 +106,7 @@ export default function Chat() {
 
         const response = await fetch(`${API_URL}/messages/${recipientId}`, {
           headers: {
-            Authorization: `Bearer ${user!.token}`,
+            Authorization: `Bearer ${user.token}`,
           },
         });
 
@@ -137,9 +138,9 @@ export default function Chat() {
   const handleSendMessage = () => {
     const messageToSend = {
       content: message,
-      senderId: user!.id,
+      senderId: user.id,
       recipientId: recipient!.id,
-      chatRoomId: chatRoomIdResolver(user!.id, recipient!.id),
+      chatRoomId: chatRoomIdResolver(user.id, recipient!.id),
     };
 
     client?.publish({
@@ -159,7 +160,7 @@ export default function Chat() {
   useEffect(() => {
     if (client) {
       fetchMessages(params.senderId, params.recipientId, true);
-      client.subscribe(`/user/queue/messages-from-${user!.id}`, (message) => {
+      client.subscribe(`/user/queue/messages-from-${user.id}`, (message) => {
         const newMessage: Message = JSON.parse(message.body);
         setAllMessages((prev) => [...prev, newMessage]);
       });
@@ -174,7 +175,14 @@ export default function Chat() {
     return () => {
       client!.unsubscribe(`/user/chat/${recipient!.id}`);
     };
-  }, [client, params.senderId, params.recipientId, fetchMessages]);
+  }, [
+    client,
+    params.senderId,
+    params.recipientId,
+    fetchMessages,
+    recipient,
+    user.id,
+  ]);
 
   if (isLoading) {
     return (

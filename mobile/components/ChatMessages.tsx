@@ -1,5 +1,5 @@
-import { useAuth } from "@/context/AuthContext";
 import { Message } from "@/types/Message";
+import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import { LegendList } from "@legendapp/list";
 import { useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
@@ -50,7 +50,7 @@ export default function ChatMessages({
   const [selectedMessageId, setSelectedMessageId] = useState<number | null>(
     null
   );
-  const { user } = useAuth();
+  const user = useAuthenticatedUser();
 
   return (
     <>
@@ -67,12 +67,12 @@ export default function ChatMessages({
                   setSelectedMessageId(item.id);
                 }
               }}
-              className={`p-2 max-w-[80%] ${item.senderId === user?.id ? "self-end" : "self-start"}`}
+              className={`p-2 max-w-[80%] ${item.senderId === user.id ? "self-end" : "self-start"}`}
             >
               {selectedMessageId === item.id && (
                 <Text
                   className={`text-textDim text-xs mb-1 ${
-                    item.senderId === user?.id ? "text-right mr-2" : "ml-2"
+                    item.senderId === user.id ? "text-right mr-2" : "ml-2"
                   }`}
                 >
                   {formatTimestamp(item.timestamp)}
