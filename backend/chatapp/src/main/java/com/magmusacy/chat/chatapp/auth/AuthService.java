@@ -2,6 +2,7 @@ package com.magmusacy.chat.chatapp.auth;
 
 import com.magmusacy.chat.chatapp.auth.dto.AuthenticationResponse;
 import com.magmusacy.chat.chatapp.auth.dto.LoginRequest;
+import com.magmusacy.chat.chatapp.auth.dto.RefreshTokenRequest;
 import com.magmusacy.chat.chatapp.auth.dto.RegisterRequest;
 import com.magmusacy.chat.chatapp.user.PasswordMismatchException;
 import com.magmusacy.chat.chatapp.user.User;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -26,8 +28,9 @@ public class AuthService {
 
     public AuthenticationResponse register(RegisterRequest request) {
         User user = userService.createUser(request, passwordEncoder);
-        String jwtToken = jwtService.generateToken(user);
-        return new AuthenticationResponse((jwtToken));
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+        return new AuthenticationResponse(accessToken, refreshToken);
     }
 
     public AuthenticationResponse login(LoginRequest request) {
@@ -36,7 +39,25 @@ public class AuthService {
         );
 
         User user = userService.findByEmail(request.email());
-        String jwtToken = jwtService.generateToken(user);
-        return new AuthenticationResponse((jwtToken));
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+        return new AuthenticationResponse(accessToken, refreshToken);
+    }
+
+    public AuthenticationResponse refreshToken(RefreshTokenRequest request) {
+        String refreshToken = request.refreshToken();
+        String username = jwtService.extractUsername(refreshToken);
+
+        if (username == null) {
+            throw new RuntimeException("Invalid refresh token");
+        }
+
+        UserDetails userDetails = userService.loadUserByUsername(username);
+        if (jwtService.isTokenValid(refreshToken, userDetails)) {
+            String newAccessToken = jwtService.generateAccessToken(userDetails);
+            return new AuthenticationResponse(newAccessToken, refreshToken);
+        } else {
+            throw new RuntimeException("Refresh token is expired or invalid. Please re-log in");
+        }
     }
 }
