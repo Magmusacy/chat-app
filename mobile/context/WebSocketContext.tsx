@@ -141,9 +141,9 @@ export default function WebSocketProvider({
       webSocketFactory: () => new SockJS(`${API_URL}/ws`),
       debug: (str) => console.log("debugLog", str),
       reconnectDelay: 5000,
-      heartbeatIncoming: 5000,
-      heartbeatOutgoing: 5000,
-      connectionTimeout: 5000,
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
+      connectionTimeout: 10000,
       beforeConnect: async () => {
         try {
           await handleRefreshToken();

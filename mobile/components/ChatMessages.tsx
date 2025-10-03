@@ -1,46 +1,8 @@
 import { Message } from "@/types/Message";
+import { formatTimestamp } from "@/utils/dates-format";
 import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
-import { LegendList } from "@legendapp/list";
 import { useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
-
-// interface ChatMessageProps {
-//   message: Message;
-//   selectedMessageId: number | null;
-//   setSelectedMessageId: React.Dispatch<React.SetStateAction<number | null>>;
-// }
-
-const formatTimestamp = (timestamp: string) => {
-  const date = new Date(timestamp);
-
-  // Format: "Today, 3:45 PM" or "Yesterday, 3:45 PM" or "Sep 24, 3:45 PM"
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-
-  // Format time
-  const timeOptions: Intl.DateTimeFormatOptions = {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  };
-  const timeString = date.toLocaleTimeString(undefined, timeOptions);
-
-  // Check if date is today, yesterday, or earlier
-  if (date.toDateString() === today.toDateString()) {
-    return `Today, ${timeString}`;
-  } else if (date.toDateString() === yesterday.toDateString()) {
-    return `Yesterday, ${timeString}`;
-  } else {
-    // Format: "Sep 24"
-    const dateOptions: Intl.DateTimeFormatOptions = {
-      month: "short",
-      day: "numeric",
-    };
-    const dateString = date.toLocaleDateString(undefined, dateOptions);
-    return `${dateString}, ${timeString}`;
-  }
-};
+import { FlatList, Text, TouchableOpacity, View } from "react-native";
 
 export default function ChatMessages({
   allMessages,
@@ -55,7 +17,7 @@ export default function ChatMessages({
   return (
     <>
       {allMessages.length > 0 ? (
-        <LegendList
+        <FlatList
           data={allMessages}
           renderItem={({ item }) => (
             <TouchableOpacity
@@ -92,13 +54,7 @@ export default function ChatMessages({
           )}
           keyExtractor={(item) => String(item.id)}
           contentContainerClassName="p-5"
-          alignItemsAtEnd
-          maintainScrollAtEnd
-          maintainScrollAtEndThreshold={0.5}
-          maintainVisibleContentPosition
-          recycleItems={false}
-          estimatedItemSize={320}
-          initialScrollIndex={allMessages.length}
+          inverted={true}
           extraData={selectedMessageId}
         />
       ) : (

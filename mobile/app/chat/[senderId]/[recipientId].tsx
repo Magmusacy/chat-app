@@ -7,9 +7,8 @@ import { chatRoomIdResolver } from "@/utils/chat-path-resolver";
 import { formatLastSeen } from "@/utils/dates-format";
 import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import Feather from "@expo/vector-icons/Feather";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useLocalSearchParams, useNavigation } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Text,
@@ -17,7 +16,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import { useKeyboardHandler } from "react-native-keyboard-controller";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface Params {
@@ -28,6 +31,28 @@ interface Params {
 interface ErrorState {
   hasError: boolean;
   message: string;
+}
+
+const PADDING_BOTTOM = 0;
+
+function useGradualAnimation() {
+  const height = useSharedValue(PADDING_BOTTOM);
+
+  useKeyboardHandler(
+    {
+      onMove: (e) => {
+        "worklet";
+        height.value = Math.max(e.height, PADDING_BOTTOM);
+      },
+      onEnd: (e) => {
+        "worklet";
+        height.value = e.height;
+      },
+    },
+    []
+  );
+
+  return { height };
 }
 
 export default function Chat() {
@@ -41,7 +66,6 @@ export default function Chat() {
   const [isRetrying, setIsRetrying] = useState(false);
   const [message, setMessage] = useState<string>("");
   const navigation = useNavigation();
-  const trueHeaderHeight = useRef<number>(0);
   const params: Params = {
     senderId: Array.isArray(senderId)
       ? parseInt(senderId[0], 10)
@@ -51,11 +75,12 @@ export default function Chat() {
       : parseInt(recipientId, 10),
   };
   const recipient = allUsers.find((user) => user.id === params.recipientId);
-
-  // uhh idk this is workaround but idk how to fix it xd
-  const headerHeight = useHeaderHeight();
-  useEffect(() => {
-    trueHeaderHeight.current = headerHeight;
+  const { height } = useGradualAnimation();
+  const keyboardPadding = useAnimatedStyle(() => {
+    return {
+      height: Math.abs(height.value),
+      marginBottom: height.value > 0 ? 0 : PADDING_BOTTOM,
+    };
   }, []);
 
   useEffect(() => {
@@ -96,15 +121,20 @@ export default function Chat() {
   }, [recipient, navigation]);
 
   const fetchMessages = useCallback(
-    async (senderId: number, recipientId: number, isRetry = false) => {
+    async (recipientId: number, isRetry = false) => {
       try {
         if (isRetry) setIsRetrying(true);
         setError(null);
 
         const response = await api.get(`/messages/${recipientId}`);
-        const data = response.data;
-        setAllMessages(Array.isArray(data) ? data : []);
-      } catch {
+        const data = response.data as Message[];
+        data.sort(
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+        setAllMessages(data);
+      } catch (err) {
+        console.log(err);
         console.error("Error fetching messages");
 
         setError({
@@ -120,7 +150,7 @@ export default function Chat() {
   );
 
   const handleRetry = () => {
-    fetchMessages(params.senderId, params.recipientId, true);
+    fetchMessages(params.recipientId, true);
   };
 
   const handleSendMessage = () => {
@@ -139,7 +169,7 @@ export default function Chat() {
       timestamp: new Date().toISOString(),
     };
 
-    setAllMessages((prev) => [...prev, tempMessage]);
+    setAllMessages((prev) => [tempMessage, ...prev]);
   };
 
   useEffect(() => {
@@ -147,13 +177,13 @@ export default function Chat() {
       return;
     }
 
-    fetchMessages(params.senderId, params.recipientId, true);
+    fetchMessages(params.recipientId, true);
 
     const sub = clientRef.current.subscribe(
       `/user/queue/messages-from-${user.id}`,
       (message) => {
         const newMessage: Message = JSON.parse(message.body);
-        setAllMessages((prev) => [...prev, newMessage]);
+        setAllMessages((prev) => [newMessage, ...prev]);
       }
     );
 
@@ -204,45 +234,39 @@ export default function Chat() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["bottom"]}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior="padding"
-        keyboardVerticalOffset={trueHeaderHeight.current}
-      >
-        <View className="flex-1 bg-background">
-          <ChatMessages allMessages={allMessages} />
-        </View>
-
-        <View className="p-4 border-t border-borderLight/30 bg-surface flex flex-row items-center gap-3">
-          <View className="flex-1 flex-row items-center bg-surfaceLight rounded-full border border-border/50 px-4">
-            <TextInput
-              className="flex-1 h-14 text-textBase text-xl"
-              placeholder="Type your message..."
-              placeholderTextColor="#9ca3af"
-              value={message}
-              onChangeText={setMessage}
+      <View className="flex-1 bg-background">
+        <ChatMessages allMessages={allMessages} />
+      </View>
+      <View className="p-4 border-t border-borderLight/30 bg-surface flex flex-row items-center gap-3">
+        <View className="flex-1 flex-row items-center bg-surfaceLight rounded-full border border-border/50 px-4">
+          <TextInput
+            className="flex-1 h-14 text-textBase text-xl"
+            placeholder="Type your message..."
+            placeholderTextColor="#9ca3af"
+            value={message}
+            onChangeText={setMessage}
+          />
+          <TouchableOpacity className="ml-2">
+            <Feather
+              name="paperclip"
+              size={20}
+              color={theme.colors.textMuted}
             />
-            <TouchableOpacity className="ml-2">
-              <Feather
-                name="paperclip"
-                size={20}
-                color={theme.colors.textMuted}
-              />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity
-            disabled={
-              message.length === 0 || !socketConnected || !clientRef.current
-            }
-            className={`bg-primary w-14 h-14 rounded-full items-center justify-center ${
-              message.length > 0 && socketConnected ? "" : "opacity-20"
-            }`}
-            onPress={handleSendMessage}
-          >
-            <Feather name="send" size={28} color="white" />
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+        <TouchableOpacity
+          disabled={
+            message.length === 0 || !socketConnected || !clientRef.current
+          }
+          className={`bg-primary w-14 h-14 rounded-full items-center justify-center ${
+            message.length > 0 && socketConnected ? "" : "opacity-20"
+          }`}
+          onPress={handleSendMessage}
+        >
+          <Feather name="send" size={28} color="white" />
+        </TouchableOpacity>
+      </View>
+      <Animated.View style={keyboardPadding} />
     </SafeAreaView>
   );
 }
