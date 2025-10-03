@@ -1,27 +1,36 @@
+import { useAuth } from "@/context/AuthContext";
+import { useWebSocket } from "@/context/WebSocketContext";
 import { OtherUser } from "@/types/OtherUser";
-import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import { LegendList } from "@legendapp/list";
 import { useRouter } from "expo-router";
-import { Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import UserCard from "./UserCard";
 
 export default function UsersList({ list }: { list: OtherUser[] }) {
-  const user = useAuthenticatedUser();
+  const { user } = useAuth();
+  const { socketConnected } = useWebSocket();
   const router = useRouter();
 
   const handleUserPress = (recipientId: number) => {
-    router.push({
-      pathname: "/chat/[senderId]/[recipientId]",
-      params: {
-        senderId: String(user.id),
-        recipientId: String(recipientId),
-      },
-    });
+    if (user?.id) {
+      router.push({
+        pathname: "/chat/[senderId]/[recipientId]",
+        params: {
+          senderId: String(user.id),
+          recipientId: String(recipientId),
+        },
+      });
+    }
   };
 
   return (
     <View className="flex-1">
-      {list.length > 0 ? (
+      {!socketConnected ? (
+        <View style={{ alignItems: "center", marginVertical: 12 }}>
+          <ActivityIndicator size="large" color="#3b82f6" />
+          <Text className="text-white mt-4">Loading messages...</Text>
+        </View>
+      ) : list.length > 0 ? (
         <LegendList
           data={list}
           keyExtractor={(item) => String(item.id)}
@@ -33,7 +42,10 @@ export default function UsersList({ list }: { list: OtherUser[] }) {
               <TouchableOpacity
                 onPress={() => handleUserPress(item.id)}
                 activeOpacity={0.7}
-                style={{ marginBottom: 8 }}
+                style={{
+                  marginBottom: 8,
+                  borderRadius: 8,
+                }}
               >
                 <UserCard cardUser={item} />
               </TouchableOpacity>

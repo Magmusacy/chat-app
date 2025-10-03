@@ -1,8 +1,8 @@
 import ChatMessages from "@/components/ChatMessages";
-import { API_URL } from "@/config";
 import { useWebSocket } from "@/context/WebSocketContext";
 import { theme } from "@/theme";
 import { Message } from "@/types/Message";
+import api from "@/utils/api";
 import { chatRoomIdResolver } from "@/utils/chat-path-resolver";
 import { formatLastSeen } from "@/utils/dates-format";
 import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
@@ -33,7 +33,8 @@ interface ErrorState {
 export default function Chat() {
   const { senderId, recipientId } = useLocalSearchParams();
   const user = useAuthenticatedUser();
-  const { client, allUsers, latestMessages } = useWebSocket();
+  const { send, allUsers, latestMessages, clientRef, socketConnected } =
+    useWebSocket();
   const [allMessages, setAllMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<ErrorState | null>(null);
@@ -51,8 +52,6 @@ export default function Chat() {
   };
   const recipient = allUsers.find((user) => user.id === params.recipientId);
 
-  const latestMessage = allMessages[allMessages.length - 1];
-
   // uhh idk this is workaround but idk how to fix it xd
   const headerHeight = useHeaderHeight();
   useEffect(() => {
@@ -60,18 +59,16 @@ export default function Chat() {
   }, []);
 
   useEffect(() => {
-    if (!client || !recipient) return;
-    const latestMessage = latestMessages.get(
+    if (!recipient) return;
+    const latest = latestMessages.get(
       chatRoomIdResolver(user.id, recipient.id)
     );
-    if (!latestMessage || latestMessage.senderId === user.id) return;
-    client.publish({
-      destination: "/app/chat.read-latest-message",
-      body: JSON.stringify({
-        otherChatUser: recipient.id,
-      }),
-    });
-  }, [client, user, latestMessage, recipient]);
+    if (!latest || latest.senderId === user.id || latest.readStatus) return;
+    send(
+      "/app/chat.read-latest-message",
+      JSON.stringify({ otherChatUser: recipient.id })
+    );
+  }, [recipient, latestMessages, user.id, send]);
 
   useEffect(() => {
     if (!recipient) return;
@@ -104,17 +101,8 @@ export default function Chat() {
         if (isRetry) setIsRetrying(true);
         setError(null);
 
-        const response = await fetch(`${API_URL}/messages/${recipientId}`, {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
+        const response = await api.get(`/messages/${recipientId}`);
+        const data = response.data;
         setAllMessages(Array.isArray(data) ? data : []);
       } catch {
         console.error("Error fetching messages");
@@ -128,7 +116,7 @@ export default function Chat() {
         setIsRetrying(false);
       }
     },
-    [user]
+    []
   );
 
   const handleRetry = () => {
@@ -143,10 +131,7 @@ export default function Chat() {
       chatRoomId: chatRoomIdResolver(user.id, recipient!.id),
     };
 
-    client?.publish({
-      destination: "/app/chat.send-message",
-      body: JSON.stringify(messageToSend),
-    });
+    send("/app/chat.send-message", JSON.stringify(messageToSend));
 
     const tempMessage = {
       ...messageToSend,
@@ -158,30 +143,30 @@ export default function Chat() {
   };
 
   useEffect(() => {
-    if (client) {
-      fetchMessages(params.senderId, params.recipientId, true);
-      client.subscribe(`/user/queue/messages-from-${user.id}`, (message) => {
-        const newMessage: Message = JSON.parse(message.body);
-        setAllMessages((prev) => [...prev, newMessage]);
-      });
-    } else if (!client) {
-      setIsLoading(false);
-      setError({
-        hasError: true,
-        message: "Couldn't connect to server",
-      });
+    if (!socketConnected || !clientRef.current) {
+      return;
     }
 
+    fetchMessages(params.senderId, params.recipientId, true);
+
+    const sub = clientRef.current.subscribe(
+      `/user/queue/messages-from-${user.id}`,
+      (message) => {
+        const newMessage: Message = JSON.parse(message.body);
+        setAllMessages((prev) => [...prev, newMessage]);
+      }
+    );
+
     return () => {
-      client!.unsubscribe(`/user/chat/${recipient!.id}`);
+      sub?.unsubscribe();
     };
   }, [
-    client,
     params.senderId,
     params.recipientId,
     fetchMessages,
-    recipient,
     user.id,
+    clientRef,
+    socketConnected,
   ]);
 
   if (isLoading) {
@@ -246,8 +231,12 @@ export default function Chat() {
             </TouchableOpacity>
           </View>
           <TouchableOpacity
-            disabled={message.length === 0}
-            className={`bg-primary w-14 h-14 rounded-full items-center justify-center ${message.length > 0 ? "" : "opacity-20"}`}
+            disabled={
+              message.length === 0 || !socketConnected || !clientRef.current
+            }
+            className={`bg-primary w-14 h-14 rounded-full items-center justify-center ${
+              message.length > 0 && socketConnected ? "" : "opacity-20"
+            }`}
             onPress={handleSendMessage}
           >
             <Feather name="send" size={28} color="white" />

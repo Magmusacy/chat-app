@@ -1,17 +1,16 @@
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import WebSocketProvider from "@/context/WebSocketContext";
-
 import { theme } from "@/theme";
 import { Stack } from "expo-router";
 import * as SystemUI from "expo-system-ui";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
 import "../global.css";
 
 function AppContent() {
   const { user } = useAuth();
   const themeColor = "#23293a";
-  console.log("tried to log in");
   SystemUI.setBackgroundColorAsync(themeColor);
 
   return (
