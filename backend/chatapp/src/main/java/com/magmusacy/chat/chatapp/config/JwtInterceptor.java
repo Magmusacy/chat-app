@@ -28,7 +28,6 @@ public class JwtInterceptor implements ChannelInterceptor {
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
-
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
             String authorizationHeader = accessor.getFirstNativeHeader("Authorization");
@@ -52,13 +51,6 @@ public class JwtInterceptor implements ChannelInterceptor {
             }
         } else if (accessor.getUser() != null && accessor.getSessionAttributes() != null) {
             Long expiryTime = (Long) accessor.getSessionAttributes().get("jwt_expiry_time");
-
-            Date expiryDate = new Date(expiryTime);
-
-            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String formattedDate = sdf.format(expiryDate);
-
-            System.out.println("JWT expires at: " + formattedDate);
 
             if (expiryTime != null && System.currentTimeMillis() > expiryTime) {
                 throw new MessagingException("JWT_EXPIRED");

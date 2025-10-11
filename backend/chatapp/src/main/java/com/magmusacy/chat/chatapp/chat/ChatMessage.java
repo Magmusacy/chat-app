@@ -3,6 +3,7 @@ package com.magmusacy.chat.chatapp.chat;
 import com.magmusacy.chat.chatapp.chatroom.ChatRoom;
 import com.magmusacy.chat.chatapp.user.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -17,8 +18,10 @@ public class ChatMessage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+    @NotNull
     @NonNull
     private LocalDateTime timestamp;
+    @NotNull
     @NonNull
     private String content;
 

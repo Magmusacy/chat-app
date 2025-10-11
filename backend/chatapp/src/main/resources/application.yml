@@ -11,7 +11,21 @@ spring:
       ddl-auto: update
     show-sql: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
-
+    properties:
+      jakarta:
+        persistence:
+          validation:
+            mode: auto
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
 server:
   error:
     include-message: always
+
+azure:
+  storage:
+    connection-string: DefaultEndpointsProtocol=https;AccountName=chatapprnspringboot;AccountKey=8I4MgvteKxaayZ6IpCid/O5x+JO31QbWOg1cW2xKkTo1WxT7Rb/mUvR6zTNRvOzdnEkDPc6jNPNN+AStkwOLIA==;EndpointSuffix=core.windows.net
+    blob-container-name: profile-pictures
+

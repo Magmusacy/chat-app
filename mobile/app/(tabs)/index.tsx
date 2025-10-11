@@ -32,7 +32,9 @@ export default function Index() {
   // This is being rendered twice always but for now it doesn't cause much problem so whatever
   useEffect(() => {
     navigation.setOptions({
-      header: () => <UsersHeader handleSetSearchQuery={setSearchQuery} />,
+      header: () => (
+        <UsersHeader handleSetSearchQuery={setSearchQuery} title="Chats" />
+      ),
     });
   }, [navigation, allUsers]);
 

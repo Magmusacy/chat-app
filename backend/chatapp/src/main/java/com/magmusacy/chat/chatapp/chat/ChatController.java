@@ -4,6 +4,7 @@ import com.magmusacy.chat.chatapp.chatroom.ChatRoomService;
 import com.magmusacy.chat.chatapp.chatroom.LatestMessageResponseDTO;
 import com.magmusacy.chat.chatapp.user.User;
 import com.magmusacy.chat.chatapp.user.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -26,7 +27,7 @@ public class ChatController {
 
     @MessageMapping("/chat.send-message")
     public void processMessage(
-            @Payload ChatMessageDTO messageDTO,
+            @Valid @Payload ChatMessageDTO messageDTO,
             Principal principal
     ) {
         ChatMessage message = chatMessageService.save(messageDTO);

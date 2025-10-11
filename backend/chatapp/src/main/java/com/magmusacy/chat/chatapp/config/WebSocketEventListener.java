@@ -1,7 +1,7 @@
 package com.magmusacy.chat.chatapp.config;
 
 import com.magmusacy.chat.chatapp.user.User;
-import com.magmusacy.chat.chatapp.user.UserDTO;
+import com.magmusacy.chat.chatapp.user.dto.UserDTO;
 import com.magmusacy.chat.chatapp.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -21,7 +21,6 @@ public class WebSocketEventListener {
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectEvent event) {
-        System.out.println(event);
         String email = event.getUser().getName();
         User user = userService.findByEmail(email);
         userService.handleUserLogin(user);
@@ -31,7 +30,6 @@ public class WebSocketEventListener {
 
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
-        System.out.println(event);
         String email = event.getUser().getName();
         User user = userService.findByEmail(email);
         userService.handleUserLogout(user);

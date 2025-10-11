@@ -19,7 +19,7 @@ function AppContent() {
         contentStyle: { backgroundColor: themeColor },
       }}
     >
-      <Stack.Protected guard={user != null}>
+      <Stack.Protected guard={user !== null}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="chat/[senderId]/[recipientId]"
@@ -29,9 +29,18 @@ function AppContent() {
             headerShadowVisible: true,
           }}
         />
+        <Stack.Screen
+          name="user/[id]"
+          options={{
+            headerTitle: "Account",
+            headerTintColor: "white",
+            headerStyle: { backgroundColor: theme.colors.background },
+            headerShadowVisible: true,
+          }}
+        />
       </Stack.Protected>
 
-      <Stack.Protected guard={user == null}>
+      <Stack.Protected guard={user === null}>
         <Stack.Screen
           name="(auth)/AuthScreen"
           options={{

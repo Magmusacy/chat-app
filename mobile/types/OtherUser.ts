@@ -3,4 +3,5 @@ export interface OtherUser {
   name: string;
   isOnline: boolean;
   lastSeen: string | null;
+  profilePictureUrl: string | null;
 }

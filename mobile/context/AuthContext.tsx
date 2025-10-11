@@ -89,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return config;
       },
       (error) => {
+        console.error(error);
         return Promise.reject(error);
       }
     );
@@ -247,6 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        setUser,
         login,
         register,
         logOut,

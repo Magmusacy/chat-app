@@ -13,10 +13,12 @@ export type AuthContextType = {
   tokenRef: React.RefObject<string>;
   handleRefreshToken: () => Promise<void>;
   accessToken: string | null;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
 };
 
 export interface User {
   id: number;
   name: string;
   email: string;
+  profilePictureUrl: string | null;
 }

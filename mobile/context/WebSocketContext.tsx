@@ -180,7 +180,7 @@ export default function WebSocketProvider({
       },
       onDisconnect: () => {
         setIsConnected(false);
-        console.warn("wyjebalo cie");
+        console.warn("Disconnected from WS session!");
       },
       onStompError: async (frame) => {
         console.error("Expired");

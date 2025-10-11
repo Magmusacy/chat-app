@@ -1,8 +1,10 @@
+import { defaultImage } from "@/config";
 import { useWebSocket } from "@/context/WebSocketContext";
 import { OtherUser } from "@/types/OtherUser";
 import { chatRoomIdResolver } from "@/utils/chat-path-resolver";
 import { formatLastSeen, formatMessageTime } from "@/utils/dates-format";
 import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
+import { Avatar } from "@kolking/react-native-avatar";
 import { Text, View } from "react-native";
 
 export default function UserCard({ cardUser }: { cardUser: OtherUser }) {
@@ -30,9 +32,14 @@ export default function UserCard({ cardUser }: { cardUser: OtherUser }) {
   return (
     <View className="flex-row bg-surface rounded-lg p-3">
       <View className="relative">
-        <View className="w-16 h-16 rounded-full bg-surfaceLight items-center justify-center border border-border/50">
-          <Text className="text-white font-bold text-xl">{initials}</Text>
-        </View>
+        <Avatar
+          source={
+            cardUser.profilePictureUrl
+              ? { uri: cardUser.profilePictureUrl }
+              : undefined
+          }
+          defaultSource={defaultImage}
+        />
 
         <View
           className={`absolute bottom-0 right-0 w-5 h-5 rounded-full border-2 border-background ${

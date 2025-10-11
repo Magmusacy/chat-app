@@ -1,34 +1,43 @@
+import { defaultImage } from "@/config";
 import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import Feather from "@expo/vector-icons/Feather";
+import { Avatar } from "@kolking/react-native-avatar";
+import { Link } from "expo-router";
 import { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface UsersHeaderParams {
   handleSetSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  title: string;
 }
 
 export default function UsersHeader({
   handleSetSearchQuery,
+  title,
 }: UsersHeaderParams) {
   const user = useAuthenticatedUser();
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   return (
-    <SafeAreaView edges={["top"]} className="bg-background ">
-      <View className="bg-background px-4 pb-2 border-b border-border">
+    <SafeAreaView edges={["top"]} className="bg-background">
+      <View className="bg-background pt-2 px-4 border-b border-border">
         <View className="flex-row justify-between items-center mb-3">
-          <Text className="text-white text-lg font-bold">Users</Text>
-          {user && (
-            <View className="flex-row items-center">
-              <View className="w-8 h-8 rounded-full bg-surfaceLight items-center justify-center mr-2">
-                <Text className="text-white font-bold">
-                  {user.name?.substring(0, 1).toUpperCase()}
-                </Text>
-              </View>
-              <Text className="text-white">{user.name}</Text>
-            </View>
-          )}
+          <Text className="text-white text-lg font-bold">{title}</Text>
+          <Link href={`/user/${user.id}`} asChild>
+            <TouchableOpacity className="flex-row items-center bg-surfaceLight rounded-full px-3 py-2 border border-border gap-4">
+              <Text className="text-white font-medium ml-1">{user.name}</Text>
+              <Avatar
+                source={
+                  user.profilePictureUrl
+                    ? { uri: user.profilePictureUrl }
+                    : undefined
+                }
+                defaultSource={defaultImage}
+                size={40}
+              />
+            </TouchableOpacity>
+          </Link>
         </View>
 
         <View className="bg-surfaceLight rounded-lg flex-row items-center px-3 border border-border mb-2">
