@@ -5,7 +5,7 @@ import { OtherUser } from "./OtherUser";
 
 export type WebSocketContextType = {
   clientRef: RefObject<Client | null>;
-  allUsers: OtherUser[];
+  allUsers: Map<number, OtherUser>;
   latestMessages: Map<LatestMessage["chatRoomId"], LatestMessage>;
   send: (
     destination: string,

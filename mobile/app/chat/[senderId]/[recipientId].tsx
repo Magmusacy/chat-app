@@ -74,7 +74,7 @@ export default function Chat() {
       ? parseInt(recipientId[0], 10)
       : parseInt(recipientId, 10),
   };
-  const recipient = allUsers.find((user) => user.id === params.recipientId);
+  const recipient = allUsers.get(params.recipientId);
   const { height } = useGradualAnimation();
   const keyboardPadding = useAnimatedStyle(() => {
     return {

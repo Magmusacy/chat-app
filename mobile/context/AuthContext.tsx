@@ -162,7 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const getUserInfo = async (token: string): Promise<User> => {
     try {
       // We pass the header explicitly because we can't guarantee that interceptors are set up yet
-      const response = await api.get("/user/me", {
+      const response = await api.get("/users/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -203,6 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setRefreshToken(registerJson.refreshToken);
     } catch (error: any) {
       if (error.response) {
+        console.log(error);
         const errorMsg = error.response.data?.message || "Registration failed";
         setErrorMessage(errorMsg);
       } else if (error.request) {

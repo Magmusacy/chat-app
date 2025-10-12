@@ -16,7 +16,7 @@ export default function Index() {
   const navigation = useNavigation();
   const { allUsers, latestMessages } = useWebSocket();
 
-  const usersWithMessages = allUsers.filter((u) => {
+  const usersWithMessages = [...allUsers.values()].filter((u) => {
     const chatRoomId = chatRoomIdResolver(u.id, user.id);
     return latestMessages.has(chatRoomId) ? u : null;
   });

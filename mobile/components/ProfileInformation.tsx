@@ -79,7 +79,7 @@ export default function ProfileInformation({
     if (!validatePassword(password, passwordConfirmation)) return;
 
     try {
-      const response = await api.post("/user/update", {
+      const response = await api.post("/users/update", {
         name: fullName,
         password: password.length === 0 ? null : password,
         passwordConfirmation:
@@ -257,9 +257,7 @@ export default function ProfileInformation({
           onPress={handleSaveChanges}
           disabled={hasErrors()}
           className={`rounded-xl p-4 mt-6 items-center ${
-            hasErrors()
-              ? "bg-gray-600 opacity-50"
-              : "bg-primary"
+            hasErrors() ? "bg-gray-600 opacity-50" : "bg-primary"
           }`}
         >
           <Text className="text-white font-semibold text-base">

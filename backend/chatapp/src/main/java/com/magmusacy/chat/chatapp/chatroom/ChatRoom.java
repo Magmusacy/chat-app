@@ -20,7 +20,7 @@ public class ChatRoom {
     @Id
     private String id;
 
-    @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(mappedBy = "chatRoom")
     private Set<ChatMessage> chatMessages = new HashSet<>();
 
     @OneToOne

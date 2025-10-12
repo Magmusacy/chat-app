@@ -24,8 +24,8 @@ public class WebSocketEventListener {
         String email = event.getUser().getName();
         User user = userService.findByEmail(email);
         userService.handleUserLogin(user);
-        List<UserDTO> users = userService.findAllUsers();
-        messagingTemplate.convertAndSend("/topic/users", users);
+        UserDTO userDTO = new UserDTO(user.getId(), user.getName(), user.getIsOnline(), user.getLastSeen(), user.getProfilePictureUrl());
+        messagingTemplate.convertAndSend("/topic/users", userDTO);
     }
 
     @EventListener
@@ -33,18 +33,7 @@ public class WebSocketEventListener {
         String email = event.getUser().getName();
         User user = userService.findByEmail(email);
         userService.handleUserLogout(user);
-        List<UserDTO> users = userService.findAllUsers();
-        messagingTemplate.convertAndSend("/topic/users", users);
-    }
-
-    // this will not be good for pagination
-    @EventListener
-    public void handleWebSocketSubscribeListener(SessionSubscribeEvent event) {
-        String destination = (String) event.getMessage().getHeaders().get("simpDestination");
-        if (destination != null && destination.startsWith("/user/queue/users")) {
-            List<UserDTO> users = userService.findAllUsers();
-            if (event.getUser() == null) return;
-            messagingTemplate.convertAndSendToUser(event.getUser().getName(), "/queue/users", users);
-        }
+        UserDTO userDTO = new UserDTO(user.getId(), user.getName(), user.getIsOnline(), user.getLastSeen(), user.getProfilePictureUrl());
+        messagingTemplate.convertAndSend("/topic/users", userDTO);
     }
 }

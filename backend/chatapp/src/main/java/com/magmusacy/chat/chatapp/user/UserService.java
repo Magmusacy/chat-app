@@ -2,6 +2,7 @@ package com.magmusacy.chat.chatapp.user;
 
 import com.magmusacy.chat.chatapp.auth.dto.RegisterRequest;
 import com.magmusacy.chat.chatapp.blobs.BlobService;
+import com.magmusacy.chat.chatapp.chatroom.ChatRoomService;
 import com.magmusacy.chat.chatapp.user.dto.UpdateUserRequestDTO;
 import com.magmusacy.chat.chatapp.user.dto.UserDTO;
 import com.magmusacy.chat.chatapp.user.dto.UserMeDTO;
@@ -25,6 +26,7 @@ import java.util.Optional;
 public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
     private final BlobService blobService;
+    private final ChatRoomService chatRoomService;
 
     @Transactional
     public User createUser(RegisterRequest request, PasswordEncoder passwordEncoder) {
@@ -130,14 +132,14 @@ public class UserService implements UserDetailsService {
         if (user.getProfilePictureUrl() != null) {
             blobService.deleteBlob(user.getProfilePictureUrl());
         }
-
+        chatRoomService.deleteUserChatRooms(user);
         userRepository.delete(user);
     }
 
     @Transactional
     public UserMeDTO updateUser(User user, UpdateUserRequestDTO requestDTO, PasswordEncoder passwordEncoder) {
         if (!requestDTO.name().equals(user.getName())) {
-            user.setName(requestDTO.name());
+            user.setName(requestDTO.name().trim());
         }
 
         if (requestDTO.password() != null && requestDTO.passwordConfirmation() != null) {

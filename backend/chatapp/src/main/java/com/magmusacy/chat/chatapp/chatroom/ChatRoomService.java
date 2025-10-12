@@ -1,7 +1,10 @@
 package com.magmusacy.chat.chatapp.chatroom;
 
+import com.magmusacy.chat.chatapp.chat.ChatMessageRepository;
+import com.magmusacy.chat.chatapp.chat.ChatMessageService;
 import com.magmusacy.chat.chatapp.user.User;
 import com.magmusacy.chat.chatapp.user.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +15,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
+    private final ChatMessageRepository chatMessageRepository;
 
     public ChatRoom save(ChatRoom chatRoom) {
         return chatRoomRepository.save(chatRoom);
@@ -60,6 +64,17 @@ public class ChatRoomService {
 
         chatRoomRepository.save(room);
         return room;
+    }
+
+    @Transactional
+    public void deleteUserChatRooms(User user) {
+        List<ChatRoom> chatRooms = chatRoomRepository.findChatRoomsByParticipatingUser(user);
+        for (ChatRoom chatRoom : chatRooms) {
+            chatRoom.setLatestMessage(null);
+            chatRoomRepository.save(chatRoom);
+            chatMessageRepository.deleteAll(chatRoom.getChatMessages());
+            chatRoomRepository.delete(chatRoom);
+        }
     }
 
     private String generateChatRoomId(User firstSender, User secondSender) {

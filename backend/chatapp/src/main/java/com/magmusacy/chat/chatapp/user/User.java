@@ -31,7 +31,7 @@ public class User implements UserDetails {
     @NotBlank(message = "Email cannot be empty")
     @Column(unique = true, nullable = false)
     private String email;
-    @Size(min = 4, max = 20, message = "Name must be between 4 and 10 characters")
+    @Size(min = 4, max = 20, message = "Name must be between 4 and 20 characters")
     private String name;
     @NotBlank(message = "Password cannot be empty")
     @Size(min = 8, message = "Password must be at least 8 characters long")
@@ -46,10 +46,10 @@ public class User implements UserDetails {
         return email;
     }
 
-    @OneToMany(mappedBy = "sender", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(mappedBy = "sender")
     private Set<ChatMessage> sentMessages = new HashSet<>();
 
-    @OneToMany(mappedBy = "recipient", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(mappedBy = "recipient")
     private Set<ChatMessage> receivedMessages = new HashSet<>();
 
 

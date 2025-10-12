@@ -2,6 +2,7 @@ import { API_URL } from "@/config";
 import { LatestMessage } from "@/types/LatestMessage";
 import { OtherUser } from "@/types/OtherUser";
 import { WebSocketContextType } from "@/types/WebSocketTypes";
+import api from "@/utils/api";
 import { Client } from "@stomp/stompjs";
 import {
   createContext,
@@ -31,7 +32,7 @@ export default function WebSocketProvider({
 }) {
   const clientRef = useRef<Client | null>(null);
   const { user, tokenRef, handleRefreshToken, accessToken } = useAuth();
-  const [allUsers, setAllUsers] = useState<OtherUser[]>([]);
+  const [allUsers, setAllUsers] = useState<Map<number, OtherUser>>(new Map());
   const [latestMessages, setLatestMessages] = useState<
     Map<LatestMessage["chatRoomId"], LatestMessage>
   >(new Map());
@@ -122,10 +123,32 @@ export default function WebSocketProvider({
   //   };
   // }, []);
 
+  // sprawdz jak to wyglada dla wiadomosci czy my robimy requesta czy bierzemy je w websocketow wszystkie i zrob tak samo tutaj
+
+  const updateUsersMapWithNewUsersArray = (users: OtherUser[]) => {
+    users.forEach((user) =>
+      setAllUsers((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(user.id, user);
+        return newMap;
+      })
+    );
+  };
+
+  const fetchAllUsers = async () => {
+    try {
+      const response = await api.get("/users");
+      const data = response.data as OtherUser[];
+      updateUsersMapWithNewUsersArray(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     if (!user) {
       setIsConnected(false);
-      setAllUsers([]);
+      setAllUsers(new Map());
       if (clientRef.current) {
         clientRef.current.deactivate();
         clientRef.current = null;
@@ -136,6 +159,8 @@ export default function WebSocketProvider({
     if (!isAppActive) {
       return;
     }
+
+    fetchAllUsers();
 
     const webSocketClient = new Client({
       webSocketFactory: () => new SockJS(`${API_URL}/ws`),
@@ -157,13 +182,8 @@ export default function WebSocketProvider({
       onConnect: () => {
         setIsConnected(true);
         webSocketClient.subscribe("/topic/users", (message) => {
-          const parsedUsers = JSON.parse(message.body) as OtherUser[];
-          setAllUsers(parsedUsers);
-        });
-
-        webSocketClient.subscribe("/user/queue/users", (message) => {
-          const parsedUsers = JSON.parse(message.body) as OtherUser[];
-          setAllUsers(parsedUsers);
+          const parsedUsers = JSON.parse(message.body) as OtherUser;
+          updateUsersMapWithNewUsersArray([parsedUsers]);
         });
 
         webSocketClient.subscribe(
@@ -177,6 +197,15 @@ export default function WebSocketProvider({
             });
           }
         );
+
+        webSocketClient.subscribe("/topic/deleted.user", (message) => {
+          const deletedUserId = parseInt(message.body as string);
+          setAllUsers((prev) => {
+            const newMap = new Map(prev);
+            newMap.delete(deletedUserId);
+            return newMap;
+          });
+        });
       },
       onDisconnect: () => {
         setIsConnected(false);
@@ -206,7 +235,7 @@ export default function WebSocketProvider({
       if (clientRef.current === webSocketClient) {
         clientRef.current = null;
       }
-      setAllUsers((prev) => [...prev]);
+      setAllUsers(new Map());
       webSocketClient.deactivate();
     };
   }, [user, isAppActive, handleRefreshToken, tokenRef]);

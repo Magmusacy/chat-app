@@ -113,7 +113,7 @@ export default function User() {
 
   const handleDeleteAccount = async () => {
     try {
-      await api.delete("/user");
+      await api.delete("/users");
       setShowDeleteModal(false);
       logOut();
     } catch (error) {

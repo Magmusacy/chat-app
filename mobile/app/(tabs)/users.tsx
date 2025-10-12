@@ -13,7 +13,7 @@ export default function Users() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const navigation = useNavigation();
 
-  const usersWithoutMessages = allUsers.filter((u) => {
+  const usersWithoutMessages = [...allUsers.values()].filter((u) => {
     const chatRoomId = chatRoomIdResolver(u.id, user.id);
     return latestMessages.has(chatRoomId) ? null : u;
   });
