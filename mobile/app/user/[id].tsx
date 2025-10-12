@@ -1,3 +1,4 @@
+import CameraModal from "@/components/CustomCameraModal";
 import Notification from "@/components/Notification";
 import ProfileInformation from "@/components/ProfileInformation";
 import { defaultImage } from "@/config";
@@ -6,19 +7,25 @@ import api from "@/utils/api";
 import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import { Ionicons } from "@expo/vector-icons";
 import { Avatar } from "@kolking/react-native-avatar";
-import { CameraType, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { Modal, Text, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+export interface PhotoInfo {
+  mimeType: unknown;
+  uri: string;
+  name: string;
+}
+
 export default function User() {
   const user = useAuthenticatedUser();
   const { setUser, logOut } = useAuth();
-  const [image, setImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [image, setImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   const [fullName, setFullName] = useState(user.name || "");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showImagePickerMenu, setShowImagePickerMenu] = useState(false);
@@ -27,27 +34,6 @@ export default function User() {
     message: string;
     visible: boolean;
   }>({ type: "success", message: "", visible: false });
-  const [facing, setFacing] = useState<CameraType>("front");
-  const [permission, requestPermisson] = useCameraPermissions();
-
-  const openCamera = async () => {
-    // Ask the user for the permission to access the camera
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-
-    if (permissionResult.granted === false) {
-      alert("You've refused to allow this appp to access your camera!");
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync();
-
-    // Explore the result
-    console.log(result);
-
-    if (!result.canceled) {
-      console.log("chuj");
-    }
-  };
 
   const pickImage = async () => {
     setShowImagePickerMenu(false);
@@ -60,40 +46,32 @@ export default function User() {
     });
 
     if (!result.canceled) {
-      setImage(result.assets[0]);
-      await saveImage(result.assets[0]);
+      setImage(result.assets[0].uri);
+      if (result.assets[0].fileName) {
+        await saveImage({
+          name: result.assets[0].fileName,
+          mimeType: result.assets[0].mimeType,
+          uri: result.assets[0].uri,
+        });
+      }
     }
   };
 
-  const takePhoto = async () => {
+  const takePhoto = async (photoInfo: PhotoInfo) => {
     setShowImagePickerMenu(false);
-    console.log("hej");
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permissionResult.granted) {
-      alert("You need to enable camera permissions!");
-    }
-
-    let result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setImage(result.assets[0]);
-      await saveImage(result.assets[0]);
-    }
+    setShowCamera(false);
+    setImage(photoInfo.uri);
+    await saveImage(photoInfo);
   };
 
-  const saveImage = async (imageAsset: ImagePicker.ImagePickerAsset) => {
+  const saveImage = async (photoInfo: PhotoInfo) => {
     setIsUploading(true);
 
     const formData = new FormData();
     formData.append("file", {
-      uri: imageAsset.uri,
-      type: imageAsset.mimeType || "image/jpeg",
-      name: imageAsset.fileName || "profile.jpg",
+      uri: photoInfo.uri,
+      type: photoInfo.mimeType,
+      name: photoInfo.name,
     } as any);
     try {
       const res = await api.post("/api/blobs/upload", formData, {
@@ -217,7 +195,7 @@ export default function User() {
             }}
           >
             <TouchableOpacity
-              onPress={takePhoto}
+              onPress={() => setShowCamera(true)}
               className="flex-row items-center p-4 border-b border-gray-700"
             >
               <Ionicons name="camera" size={20} color="white" />
@@ -236,6 +214,12 @@ export default function User() {
           </View>
         </>
       )}
+
+      <CameraModal
+        visible={showCamera}
+        onClose={() => setShowCamera(false)}
+        onPhotoTaken={takePhoto}
+      />
 
       <Modal
         visible={showDeleteModal}

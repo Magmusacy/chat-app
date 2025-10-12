@@ -1,4 +1,5 @@
 import ChatMessages from "@/components/ChatMessages";
+import { defaultImage } from "@/config";
 import { useWebSocket } from "@/context/WebSocketContext";
 import { theme } from "@/theme";
 import { Message } from "@/types/Message";
@@ -7,6 +8,7 @@ import { chatRoomIdResolver } from "@/utils/chat-path-resolver";
 import { formatLastSeen } from "@/utils/dates-format";
 import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import Feather from "@expo/vector-icons/Feather";
+import { Avatar } from "@kolking/react-native-avatar";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -99,21 +101,34 @@ export default function Chat() {
     if (!recipient) return;
     navigation.setOptions({
       headerTitle: () => (
-        <View className="flex-col items-start w-full pl-2">
-          <Text className="text-white font-bold text-lg">{recipient.name}</Text>
-          <View className="flex-row items-center">
-            <View
-              className={`w-2 h-2 rounded-full mr-1 ${
-                recipient.isOnline ? "bg-success" : "bg-textMuted"
-              }`}
-            />
-            <Text className="text-textMuted text-xs">
-              {recipient.isOnline
-                ? "Online"
-                : recipient.lastSeen
-                  ? `Last seen ${formatLastSeen(recipient.lastSeen)}`
-                  : "Offline"}
+        <View className="flex-row items-center w-full pl-2 gap-3">
+          <Avatar
+            source={
+              recipient.profilePictureUrl
+                ? { uri: recipient.profilePictureUrl }
+                : undefined
+            }
+            defaultSource={defaultImage}
+            size={40}
+          />
+          <View className="flex-col items-start flex-1">
+            <Text className="text-white font-bold text-lg">
+              {recipient.name}
             </Text>
+            <View className="flex-row items-center">
+              <View
+                className={`w-2 h-2 rounded-full mr-1 ${
+                  recipient.isOnline ? "bg-success" : "bg-textMuted"
+                }`}
+              />
+              <Text className="text-textMuted text-xs">
+                {recipient.isOnline
+                  ? "Online"
+                  : recipient.lastSeen
+                    ? `Last seen ${formatLastSeen(recipient.lastSeen)}`
+                    : "Offline"}
+              </Text>
+            </View>
           </View>
         </View>
       ),
@@ -169,6 +184,7 @@ export default function Chat() {
       timestamp: new Date().toISOString(),
     };
 
+    setMessage("");
     setAllMessages((prev) => [tempMessage, ...prev]);
   };
 
