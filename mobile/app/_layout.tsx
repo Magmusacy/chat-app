@@ -6,6 +6,7 @@ import * as SystemUI from "expo-system-ui";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import RTCProvider from "@/context/RTCContext";
 import "../global.css";
 
 function AppContent() {
@@ -59,7 +60,9 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AuthProvider>
           <WebSocketProvider>
-            <AppContent />
+            <RTCProvider>
+              <AppContent />
+            </RTCProvider>
           </WebSocketProvider>
         </AuthProvider>
       </SafeAreaProvider>

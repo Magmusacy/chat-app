@@ -9,7 +9,7 @@ import { formatLastSeen } from "@/utils/dates-format";
 import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import Feather from "@expo/vector-icons/Feather";
 import { Avatar } from "@kolking/react-native-avatar";
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -68,6 +68,7 @@ export default function Chat() {
   const [isRetrying, setIsRetrying] = useState(false);
   const [message, setMessage] = useState<string>("");
   const navigation = useNavigation();
+  const router = useRouter();
   const params: Params = {
     senderId: Array.isArray(senderId)
       ? parseInt(senderId[0], 10)
@@ -270,6 +271,20 @@ export default function Chat() {
             />
           </TouchableOpacity>
         </View>
+        <TouchableOpacity
+          onPress={() =>
+            router.push(`/videoCall/${params.recipientId}?type=call` as any)
+          }
+        >
+          <Text className="text-white bg-red-500 p-4">ZADZWON</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            router.push(`/videoCall/${params.recipientId}?type=answer` as any);
+          }}
+        >
+          <Text className="text-white bg-red-500 p-4">ODBIERz</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           disabled={
             message.length === 0 || !socketConnected || !clientRef.current

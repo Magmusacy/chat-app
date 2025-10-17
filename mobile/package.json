@@ -11,6 +11,7 @@
     "lint": "expo lint"
   },
   "dependencies": {
+    "@config-plugins/react-native-webrtc": "^12.0.0",
     "@expo/vector-icons": "^14.1.0",
     "@kolking/react-native-avatar": "^2.1.6",
     "@legendapp/list": "^2.0.7",
@@ -52,6 +53,7 @@
     "react-native-safe-area-context": "^5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-web": "~0.20.0",
+    "react-native-webrtc": "^124.0.7",
     "react-native-webview": "13.13.5",
     "sockjs-client": "^1.6.1",
     "tailwindcss": "^3.4.17"

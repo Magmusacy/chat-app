@@ -1,4 +1,4 @@
-const DEV_API_URL = "http://192.168.0.100:8080";
+const DEV_API_URL = "http://192.168.0.103:8080";
 const PROD_API_URL = "https://chatapp-backend-5eez.onrender.com";
 
 export const API_URL =
