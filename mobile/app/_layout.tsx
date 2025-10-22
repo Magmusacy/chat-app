@@ -39,6 +39,16 @@ function AppContent() {
             headerShadowVisible: true,
           }}
         />
+        <Stack.Screen
+          name="videoCall/[recipientId]"
+          options={{
+            headerTitle: "",
+            headerTintColor: "white",
+            headerStyle: { backgroundColor: "transparent" },
+            headerTransparent: true,
+            headerShadowVisible: false,
+          }}
+        />
       </Stack.Protected>
 
       <Stack.Protected guard={user === null}>

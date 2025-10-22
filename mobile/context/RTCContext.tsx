@@ -6,9 +6,10 @@ import {
 import {
   createContext,
   ReactNode,
+  RefObject,
   useContext,
   useEffect,
-  useState,
+  useRef,
 } from "react";
 import { useWebSocket } from "./WebSocketContext";
 
@@ -20,9 +21,8 @@ const ICE_SERVERS = {
 };
 
 interface RTCInterface {
-  pendingCandidates: IceCandidate[];
-  pendingOffer: Offer | null;
-  resetPendingCandidates: () => void;
+  pendingCandidatesRef: RefObject<IceCandidate[]>;
+  pendingOfferRef: RefObject<Offer | null>;
 }
 
 export const RTCContext = createContext<RTCInterface | null>(null);
@@ -32,16 +32,8 @@ export const RTCContext = createContext<RTCInterface | null>(null);
 // the call state
 function RTCProvider({ children }: { children: ReactNode }) {
   const { clientRef, socketConnected } = useWebSocket();
-  // const pendingCandidatesRef = useRef<any[]>([]);
-  // const pendingOfferRef = useRef<Offer | null>([]);
-  const [pendingCandidates, setPendingCandidates] = useState<IceCandidate[]>(
-    []
-  );
-  const [pendingOffer, setPendingOffer] = useState<Offer | null>(null);
-
-  const resetPendingCandidates = () => {
-    setPendingCandidates([]);
-  };
+  const pendingCandidatesRef = useRef<IceCandidate[]>([]);
+  const pendingOfferRef = useRef<Offer | null>(null);
 
   useEffect(() => {
     const client = clientRef.current;
@@ -52,45 +44,10 @@ function RTCProvider({ children }: { children: ReactNode }) {
           const data = JSON.parse(message.body) as SignallingMessage;
 
           if (data.type === "offer") {
-            setPendingOffer(data);
+            pendingOfferRef.current = data as Offer;
           } else if (data.type === "candidate") {
-            setPendingCandidates((prev) => [...prev, data]);
+            pendingCandidatesRef.current.push(data as IceCandidate);
           }
-          // await pcRef.current?.setRemoteDescription(
-          //   new RTCSessionDescription(data.payload as any)
-          // );
-          // pendingCandidatesRef.current.forEach((c) =>
-          //   pcRef.current?.addIceCandidate(c)
-          // );
-          // pendingCandidatesRef.current = [];
-
-          // const answerDescription = await pcRef.current?.createAnswer();
-          // await pcRef.current?.setLocalDescription(answerDescription);
-
-          // console.warn(answerDescription);
-
-          // const answer: Answer = {
-          //   sender: data.recipient,
-          //   recipient: data.sender,
-          //   payload: answerDescription,
-          //   type: answerDescription.type as "answer",
-          // };
-
-          // clientRef.current?.publish({
-          //   destination: "/app/signal",
-          //   body: JSON.stringify(answer),
-          // });
-          // } else if (data.type === "answer") {
-          //   await pcRef.current?.setRemoteDescription(
-          //     new RTCSessionDescription(data.payload as any)
-          //   );
-          // } else if (data.type === "candidate") {
-          //   setPendingCandidates((prev) => [...prev, data]);
-          // if (pcRef.current?.remoteDescription) {
-          //   await pcRef.current?.addIceCandidate(data.payload as any);
-          // } else {
-          //   pendingCandidatesRef.current.push(data.payload);
-          // }
         } catch (err) {
           console.error("Error parsing signalling message:", err);
         }
@@ -99,9 +56,7 @@ function RTCProvider({ children }: { children: ReactNode }) {
   }, [socketConnected]);
 
   return (
-    <RTCContext.Provider
-      value={{ pendingCandidates, pendingOffer, resetPendingCandidates }}
-    >
+    <RTCContext.Provider value={{ pendingCandidatesRef, pendingOfferRef }}>
       {children}
     </RTCContext.Provider>
   );

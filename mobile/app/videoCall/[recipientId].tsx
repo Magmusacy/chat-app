@@ -8,12 +8,14 @@ import {
 } from "@/types/SignallingTypes";
 import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import {
   mediaDevices,
   MediaStream,
+  RTCIceCandidate,
   RTCPeerConnection,
+  RTCSessionDescription,
   RTCView,
 } from "react-native-webrtc";
 
@@ -37,10 +39,9 @@ function VideoCall() {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const { clientRef, socketConnected } = useWebSocket();
   const user = useAuthenticatedUser();
-  const { pendingCandidates, pendingOffer, resetPendingCandidates } =
-    useWebRTC();
+  const { pendingCandidatesRef, pendingOfferRef } = useWebRTC();
 
-  const setupLocalStream = async () => {
+  const setupLocalStream = useCallback(async () => {
     if (!(clientRef.current && socketConnected)) return;
     try {
       pcRef.current = new RTCPeerConnection(ICE_SERVERS);
@@ -51,18 +52,44 @@ function VideoCall() {
 
       localStreamRef.current = stream;
       setLocalSrc(stream.toURL());
+      remoteStreamRef.current = new MediaStream();
 
       localStreamRef.current.getTracks().forEach((track) => {
         pcRef.current?.addTrack(track, localStreamRef.current);
       });
+
+      // logs for development
+      pcRef.current.addEventListener("connectionstatechange", () => {
+        console.log("🔌 Connection state:", pcRef.current?.connectionState);
+      });
+
+      pcRef.current.addEventListener("iceconnectionstatechange", () => {
+        console.log(
+          "🧊 ICE connection state:",
+          pcRef.current?.iceConnectionState
+        );
+      });
+
+      pcRef.current.addEventListener("icegatheringstatechange", () => {
+        console.log(
+          "📡 ICE gathering state:",
+          pcRef.current?.iceGatheringState
+        );
+      });
+
+      pcRef.current.addEventListener("signalingstatechange", () => {
+        console.log("📶 Signaling state:", pcRef.current?.signalingState);
+      });
+
+      pcRef.current.addEventListener("track", (event) => {
+        const remoteStream = event.streams[0];
+        remoteStreamRef.current = remoteStream;
+        setRemoteSrc(remoteStream.toURL());
+      });
     } catch (err) {
       console.error("Error getting local media:", err);
     }
-  };
-
-  useEffect(() => {
-    setupLocalStream();
-  }, []);
+  }, [clientRef, socketConnected]);
 
   useEffect(() => {
     return () => {
@@ -84,52 +111,19 @@ function VideoCall() {
     const call = async () => {
       if (!(clientRef.current && socketConnected)) return;
       try {
-        pcRef.current = new RTCPeerConnection(ICE_SERVERS);
-        const stream = await mediaDevices.getUserMedia({
-          audio: true,
-          video: true,
-        });
+        await setupLocalStream();
 
-        localStreamRef.current = stream;
-        setLocalSrc(stream.toURL()); // Ustawienie local stream dla wyświetlenia
-        console.log("✅ Local source set");
-
-        localStreamRef.current.getTracks().forEach((track) => {
-          pcRef.current?.addTrack(track, localStreamRef.current);
-        });
-
-        pcRef.current.addEventListener("track", (event) => {
-          console.log("📥 Remote track received");
-          remoteStreamRef.current = event.streams[0];
-          setRemoteSrc(event.streams[0].toURL()); // Ustawienie remote stream dla wyświetlenia
-        });
-
-        const offerDescription = await pcRef.current.createOffer();
-        await pcRef.current?.setLocalDescription(offerDescription);
-
-        const offer: Offer = {
-          sender: user.id,
-          recipient: recipientId,
-          payload: offerDescription,
-          type: offerDescription.type as "offer",
-        };
-
-        clientRef.current.publish({
-          destination: "/app/signal",
-          body: JSON.stringify(offer),
-        });
-
-        clientRef.current.subscribe("/user/queue/webrtc", async (message) => {
-          const data = JSON.parse(message.body) as SignallingMessage;
-          if (data.type === "answer") {
-            await pcRef.current?.setRemoteDescription(
-              new RTCSessionDescription(data.payload as any)
-            );
-          }
-        });
+        if (!pcRef.current) {
+          console.error("PCRef not initialized after setupLocalStream");
+          return;
+        }
 
         pcRef.current.addEventListener("icecandidate", (event) => {
           if (event.candidate) {
+            console.log(
+              "🧊 ICE candidate generated:",
+              event.candidate.candidate
+            );
             const candidateBody: IceCandidate = {
               sender: user.id,
               recipient: recipientId,
@@ -143,6 +137,35 @@ function VideoCall() {
             });
           }
         });
+
+        clientRef.current.subscribe("/user/queue/webrtc", async (message) => {
+          const data = JSON.parse(message.body) as SignallingMessage;
+          console.log("📨 Received signaling message:", data.type);
+
+          if (data.type === "answer") {
+            await pcRef.current?.setRemoteDescription(
+              new RTCSessionDescription(data.payload as any)
+            );
+          } else if (data.type === "candidate") {
+            const candidate = new RTCIceCandidate(data.payload as any);
+            await pcRef.current?.addIceCandidate(candidate);
+          }
+        });
+
+        const offerDescription = await pcRef.current.createOffer();
+        await pcRef.current.setLocalDescription(offerDescription);
+
+        const offer: Offer = {
+          sender: user.id,
+          recipient: recipientId,
+          payload: offerDescription,
+          type: offerDescription.type as "offer",
+        };
+
+        clientRef.current.publish({
+          destination: "/app/signal",
+          body: JSON.stringify(offer),
+        });
       } catch (err) {
         console.error("Error starting call:", err);
       }
@@ -151,23 +174,58 @@ function VideoCall() {
     if (type === "call") {
       call();
     }
-  }, [socketConnected, clientRef, user.id, recipientId, type]);
+  }, [
+    socketConnected,
+    clientRef,
+    user.id,
+    recipientId,
+    type,
+    setupLocalStream,
+  ]);
 
   useEffect(() => {
     const answer = async () => {
-      if (pendingOffer) {
-        await pcRef.current?.setRemoteDescription(
-          new RTCSessionDescription(pendingOffer.payload as any)
-        );
-        pendingCandidates.forEach((c) => pcRef.current?.addIceCandidate(c));
-        resetPendingCandidates();
+      if (!pendingOfferRef.current) return;
 
-        const answerDescription = await pcRef.current?.createAnswer();
-        await pcRef.current?.setLocalDescription(answerDescription);
+      try {
+        await setupLocalStream();
+
+        if (!pcRef.current) {
+          console.error("PCRef not initialized after setupLocalStream");
+          return;
+        }
+
+        pcRef.current.addEventListener("icecandidate", (event) => {
+          if (event.candidate) {
+            const candidateBody: IceCandidate = {
+              sender: pendingOfferRef.current!.recipient,
+              recipient: pendingOfferRef.current!.sender,
+              type: "candidate",
+              payload: event.candidate,
+            };
+
+            clientRef.current?.publish({
+              destination: "/app/signal",
+              body: JSON.stringify(candidateBody),
+            });
+          }
+        });
+
+        await pcRef.current.setRemoteDescription(
+          new RTCSessionDescription(pendingOfferRef.current.payload as any)
+        );
+
+        pendingCandidatesRef.current.forEach((c) => {
+          pcRef.current?.addIceCandidate(c);
+        });
+        pendingCandidatesRef.current = [];
+
+        const answerDescription = await pcRef.current.createAnswer();
+        await pcRef.current.setLocalDescription(answerDescription);
 
         const answer: Answer = {
-          sender: pendingOffer.recipient,
-          recipient: pendingOffer.sender,
+          sender: pendingOfferRef.current.recipient,
+          recipient: pendingOfferRef.current.sender,
           payload: answerDescription,
           type: answerDescription.type as "answer",
         };
@@ -176,6 +234,9 @@ function VideoCall() {
           destination: "/app/signal",
           body: JSON.stringify(answer),
         });
+        console.log("ANSWER sent");
+      } catch (err) {
+        console.error("Error in answer flow:", err);
       }
     };
 
@@ -183,11 +244,11 @@ function VideoCall() {
       answer();
     }
   }, [
-    pendingCandidates,
-    pendingOffer,
     type,
     clientRef,
-    resetPendingCandidates,
+    setupLocalStream,
+    pendingCandidatesRef,
+    pendingOfferRef,
   ]);
 
   return (
@@ -199,7 +260,6 @@ function VideoCall() {
           {localSrc ? (
             <RTCView
               streamURL={localSrc}
-              // className="flex-1 bg-gray-800"
               style={{ flex: 1 }}
               objectFit="cover"
               mirror={true}
@@ -217,7 +277,7 @@ function VideoCall() {
           {remoteSrc ? (
             <RTCView
               streamURL={remoteSrc}
-              className="flex-1 bg-gray-800"
+              style={{ flex: 1 }}
               objectFit="cover"
             />
           ) : (
