@@ -2,6 +2,7 @@ package com.magmusacy.chat.chatapp.user;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.magmusacy.chat.chatapp.AbstractIntegrationTest;
+import com.magmusacy.chat.chatapp.blobs.BlobService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -11,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -23,6 +25,10 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private BlobService blobService;
+
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -55,7 +61,7 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("Given authenticated user, when GET /user/me, then user info should be returned")
     void getUserInfo_WithAuthenticatedUser_ReturnsUserInfo() throws Exception {
         // When & Then
-        mockMvc.perform(get("/user/me"))
+        mockMvc.perform(get("/users/me"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Test User"))
                 .andExpect(jsonPath("$.email").value("test@gmail.com"));
@@ -65,7 +71,7 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("Given unauthenticated user, when GET /user/me, then unauthorized status should be returned")
     void getUserInfo_WithUnauthenticatedUser_ReturnsUnauthorized() throws Exception {
         // When & Then
-        mockMvc.perform(get("/user/me"))
+        mockMvc.perform(get("/users/me"))
                 .andExpect(status().isUnauthorized());
     }
 }

@@ -67,16 +67,19 @@ class AuthServiceTest {
     void register_WithValidRequest_ReturnsJwtToken() {
         // Given
         when(userService.createUser(any(RegisterRequest.class), any(PasswordEncoder.class))).thenReturn(testUser);
-        when(jwtService.generateToken(any(User.class))).thenReturn("jwtToken");
+        when(jwtService.generateAccessToken(any(User.class))).thenReturn("accessToken");
+        when(jwtService.generateRefreshToken(any(User.class))).thenReturn("refreshToken");
 
         // When
         AuthenticationResponse response = authService.register(registerRequest);
 
         // Then
         assertNotNull(response);
-        assertEquals("jwtToken", response.token());
+        assertEquals("accessToken", response.accessToken());
+        assertEquals("refreshToken", response.refreshToken());
         verify(userService).createUser(registerRequest, passwordEncoder);
-        verify(jwtService).generateToken(testUser);
+        verify(jwtService).generateAccessToken(testUser);
+        verify(jwtService).generateRefreshToken(testUser);
     }
 
     @Test
@@ -84,17 +87,20 @@ class AuthServiceTest {
     void login_WithValidCredentials_ReturnsJwtToken() {
         // Given
         when(userService.findByEmail("test@gmail.com")).thenReturn(testUser);
-        when(jwtService.generateToken(any(User.class))).thenReturn("jwtToken");
+        when(jwtService.generateAccessToken(any(User.class))).thenReturn("accessToken");
+        when(jwtService.generateRefreshToken(any(User.class))).thenReturn("refreshToken");
 
         // When
         AuthenticationResponse response = authService.login(loginRequest);
 
         // Then
         assertNotNull(response);
-        assertEquals("jwtToken", response.token());
+        assertEquals("accessToken", response.accessToken());
+        assertEquals("refreshToken", response.refreshToken());
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(userService).findByEmail("test@gmail.com");
-        verify(jwtService).generateToken(testUser);
+        verify(jwtService).generateAccessToken(testUser);
+        verify(jwtService).generateRefreshToken(testUser);
     }
 
     @Test

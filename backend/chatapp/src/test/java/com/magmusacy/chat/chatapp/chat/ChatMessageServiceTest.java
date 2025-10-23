@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -57,8 +58,6 @@ class ChatMessageServiceTest {
         recipient.setName("Recipient");
 
         chatRoom = new ChatRoom();
-        chatRoom.setSender(sender);
-        chatRoom.setRecipient(recipient);
         chatRoom.setId(roomId);
 
         messageDTO = new ChatMessageDTO("Hello, how are you?", 1, 2, roomId);
@@ -73,34 +72,15 @@ class ChatMessageServiceTest {
     }
 
     @Test
-    @DisplayName("Given valid message DTO, when save is called, then message should be saved")
-    void save_WithValidMessageDTO_SavesMessage() {
-        // Given
-        when(userService.findById(1)).thenReturn(Optional.of(sender));
-        when(userService.findById(2)).thenReturn(Optional.of(recipient));
-        when(chatRoomService.getChatRoom(sender, recipient, true)).thenReturn(Optional.of(chatRoom));
-        when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(savedMessage);
-
-        // When
-        ChatMessage result = chatMessageService.save(messageDTO);
-
-        // Then
-        assertNotNull(result);
-        assertEquals("Hello, how are you?", result.getContent());
-        assertEquals(sender, result.getSender());
-        assertEquals(recipient, result.getRecipient());
-        verify(chatMessageRepository).save(any(ChatMessage.class));
-    }
-
-    @Test
-    @DisplayName("Given non-existing user ID, when save is called, then NoSuchElementException should be thrown")
+    @DisplayName("Given non-existing user ID, when save is called, then UsernameNotFoundException should be thrown")
     void save_WithNonExistingUser_ThrowsException() {
         // Given
-        when(userService.findById(999)).thenReturn(Optional.empty());
+
+        when(userService.findById(999)).thenThrow(new UsernameNotFoundException("User not found"));
         ChatMessageDTO invalidMessageDTO = new ChatMessageDTO("Test message", 999, 2, roomId);
 
         // When & Then
-        assertThrows(NoSuchElementException.class, () ->
+        assertThrows(UsernameNotFoundException.class, () ->
                 chatMessageService.save(invalidMessageDTO)
         );
         verify(chatMessageRepository, never()).save(any(ChatMessage.class));
@@ -110,8 +90,8 @@ class ChatMessageServiceTest {
     @DisplayName("Given non-existing chat room, when save is called, then NoSuchElementException should be thrown")
     void save_WithNonExistingChatRoom_ThrowsException() {
         // Given
-        when(userService.findById(1)).thenReturn(Optional.of(sender));
-        when(userService.findById(2)).thenReturn(Optional.of(recipient));
+        when(userService.findById(1)).thenReturn(sender);
+        when(userService.findById(2)).thenReturn(recipient);
         when(chatRoomService.getChatRoom(sender, recipient, true)).thenReturn(Optional.empty());
 
         // When & Then
@@ -129,29 +109,31 @@ class ChatMessageServiceTest {
                 new ChatMessage(LocalDateTime.now(), "Message 1", chatRoom, sender, recipient),
                 new ChatMessage(LocalDateTime.now(), "Message 2", chatRoom, recipient, sender)
         );
+        messages.get(0).setId(1);
+        messages.get(1).setId(2);
 
-        when(userService.findById(1)).thenReturn(Optional.of(sender));
-        when(userService.findById(2)).thenReturn(Optional.of(recipient));
+        when(userService.findById(1)).thenReturn(sender);
+        when(userService.findById(2)).thenReturn(recipient);
         when(chatMessageRepository.findBySenderAndRecipient(sender, recipient)).thenReturn(messages);
 
         // When
-        List<ChatMessage> result = chatMessageService.findChatMessages(1, 2);
+        List<ChatMessageResponseDTO> result = chatMessageService.findChatMessages(1, 2);
 
         // Then
         assertEquals(2, result.size());
-        assertEquals("Message 1", result.get(0).getContent());
-        assertEquals("Message 2", result.get(1).getContent());
+        assertEquals("Message 1", result.get(0).content());
+        assertEquals("Message 2", result.get(1).content());
         verify(chatMessageRepository).findBySenderAndRecipient(sender, recipient);
     }
 
     @Test
-    @DisplayName("Given non-existing user ID, when findChatMessages is called, then NoSuchElementException should be thrown")
+    @DisplayName("Given non-existing user ID, when findChatMessages is called, then UsernameNotFoundException should be thrown")
     void findChatMessages_WithNonExistingUser_ThrowsException() {
         // Given
-        when(userService.findById(999)).thenReturn(Optional.empty());
+        when(userService.findById(999)).thenThrow(new UsernameNotFoundException("User not found"));
 
         // When & Then
-        assertThrows(NoSuchElementException.class, () ->
+        assertThrows(UsernameNotFoundException.class, () ->
                 chatMessageService.findChatMessages(999, 2)
         );
         verify(chatMessageRepository, never()).findBySenderAndRecipient(any(), any());

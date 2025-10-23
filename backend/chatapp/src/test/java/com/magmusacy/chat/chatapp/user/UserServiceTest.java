@@ -99,11 +99,11 @@ class UserServiceTest {
         when(userRepository.findById(1)).thenReturn(Optional.of(testUser));
 
         // When
-        Optional<User> foundUser = userService.findById(1);
+        User foundUser = userService.findById(1);
 
         // Then
-        assertTrue(foundUser.isPresent());
-        assertEquals(testUser, foundUser.get());
+        assertNotNull(foundUser);
+        assertEquals(testUser, foundUser);
     }
 
     @Test

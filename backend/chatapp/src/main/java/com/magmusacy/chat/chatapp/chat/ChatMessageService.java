@@ -31,7 +31,7 @@ public class ChatMessageService {
 
         ChatMessage chatMessage = new ChatMessage(LocalDateTime.now(), messageDTO.content(), chatRoom, sender, recipient);
         ChatMessage latestMessage = chatMessageRepository.save(chatMessage);
-        chatRoom.setLatestMessage(chatMessage);
+        chatRoom.setLatestMessage(latestMessage);
         chatRoom.setReadStatus(false);
         chatRoomService.save(chatRoom);
         return latestMessage;

@@ -5,6 +5,7 @@ import com.magmusacy.chat.chatapp.AbstractIntegrationTest;
 import com.magmusacy.chat.chatapp.auth.dto.AuthenticationResponse;
 import com.magmusacy.chat.chatapp.auth.dto.LoginRequest;
 import com.magmusacy.chat.chatapp.auth.dto.RegisterRequest;
+import com.magmusacy.chat.chatapp.blobs.BlobService;
 import com.magmusacy.chat.chatapp.user.User;
 import com.magmusacy.chat.chatapp.user.UserRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -15,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -29,6 +31,9 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private BlobService blobService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -63,7 +68,8 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists())
+                .andExpect(jsonPath("$.accessToken").exists())
+                .andExpect(jsonPath("$.refreshToken").exists())
                 .andReturn();
 
         // Then
@@ -76,10 +82,12 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
         assertEquals("Test User", savedUser.getName());
         assertTrue(passwordEncoder.matches("password123", savedUser.getPassword()));
 
-        // Verify token is valid
-        String token = response.token();
-        assertNotNull(token);
-        String username = jwtService.extractUsername(token);
+        // Verify tokens are valid
+        String accessToken = response.accessToken();
+        String refreshToken = response.refreshToken();
+        assertNotNull(accessToken);
+        assertNotNull(refreshToken);
+        String username = jwtService.extractUsername(accessToken);
         assertEquals("test@gmail.com", username);
     }
 
@@ -128,17 +136,20 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists())
+                .andExpect(jsonPath("$.accessToken").exists())
+                .andExpect(jsonPath("$.refreshToken").exists())
                 .andReturn();
 
         // Then
         String responseContent = result.getResponse().getContentAsString();
         AuthenticationResponse response = objectMapper.readValue(responseContent, AuthenticationResponse.class);
 
-        // Verify token is valid
-        String token = response.token();
-        assertNotNull(token);
-        String username = jwtService.extractUsername(token);
+        // Verify tokens are valid
+        String accessToken = response.accessToken();
+        String refreshToken = response.refreshToken();
+        assertNotNull(accessToken);
+        assertNotNull(refreshToken);
+        String username = jwtService.extractUsername(accessToken);
         assertEquals("login@gmail.com", username);
     }
 
