@@ -1,21 +1,21 @@
 export type Offer = {
   payload: unknown;
-  recipient: number;
-  sender: number;
+  recipient: string;
+  sender: string;
   type: "offer";
 };
 
 export type IceCandidate = {
   type: "candidate";
-  recipient: number;
-  sender: number;
+  recipient: string;
+  sender: string;
   payload: RTCIceCandidateInit | null;
 };
 
 export type Answer = {
   type: "answer";
-  recipient: number;
-  sender: number;
+  recipient: string;
+  sender: string;
   payload: unknown;
 };
 

@@ -6,7 +6,6 @@ import { chatRoomIdResolver } from "@/utils/chat-path-resolver";
 import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
 import { useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {
@@ -29,7 +28,6 @@ export default function Index() {
       .includes(searchQuery.toLocaleLowerCase().trim());
   });
 
-  // This is being rendered twice always but for now it doesn't cause much problem so whatever
   useEffect(() => {
     navigation.setOptions({
       header: () => (
@@ -40,11 +38,6 @@ export default function Index() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <View>
-        <TouchableOpacity onPress={logOut}>
-          <Text className="text-white">wyloguj</Text>
-        </TouchableOpacity>
-      </View>
       <UsersList list={filteredUsers} />
     </SafeAreaView>
   );

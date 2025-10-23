@@ -131,6 +131,14 @@ export default function Chat() {
               </Text>
             </View>
           </View>
+          <TouchableOpacity
+            onPress={() =>
+              router.push(`/videoCall/${params.recipientId}?type=call` as any)
+            }
+            className="w-12 h-12 rounded-full items-center justify-center bg-surfaceLight"
+          >
+            <Feather name="video" size={24} color={theme.colors.textMuted} />
+          </TouchableOpacity>
         </View>
       ),
     });

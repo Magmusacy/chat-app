@@ -1,3 +1,5 @@
+import IncomingCall from "@/components/IncomingCall";
+import { OtherUser } from "@/types/OtherUser";
 import {
   IceCandidate,
   Offer,
@@ -10,6 +12,7 @@ import {
   useContext,
   useEffect,
   useRef,
+  useState,
 } from "react";
 import { useWebSocket } from "./WebSocketContext";
 
@@ -23,6 +26,8 @@ const ICE_SERVERS = {
 interface RTCInterface {
   pendingCandidatesRef: RefObject<IceCandidate[]>;
   pendingOfferRef: RefObject<Offer | null>;
+  handleCallDisconnect: () => void;
+  caller: OtherUser | null;
 }
 
 export const RTCContext = createContext<RTCInterface | null>(null);
@@ -34,10 +39,15 @@ function RTCProvider({ children }: { children: ReactNode }) {
   const { clientRef, socketConnected } = useWebSocket();
   const pendingCandidatesRef = useRef<IceCandidate[]>([]);
   const pendingOfferRef = useRef<Offer | null>(null);
+  const [caller, setCaller] = useState<OtherUser | null>(null);
+  const { allUsers } = useWebSocket();
+
+  const handleCallDisconnect = () => {
+    setCaller(null);
+  };
 
   useEffect(() => {
     const client = clientRef.current;
-
     if (socketConnected && client) {
       client.subscribe("/user/queue/webrtc", async (message) => {
         try {
@@ -45,6 +55,10 @@ function RTCProvider({ children }: { children: ReactNode }) {
 
           if (data.type === "offer") {
             pendingOfferRef.current = data as Offer;
+            const caller = allUsers.get(parseInt(data.sender));
+            if (caller) {
+              setCaller(caller);
+            }
           } else if (data.type === "candidate") {
             pendingCandidatesRef.current.push(data as IceCandidate);
           }
@@ -53,11 +67,21 @@ function RTCProvider({ children }: { children: ReactNode }) {
         }
       });
     }
-  }, [socketConnected]);
+  }, [socketConnected, clientRef]);
 
   return (
-    <RTCContext.Provider value={{ pendingCandidatesRef, pendingOfferRef }}>
-      {children}
+    <RTCContext.Provider
+      value={{
+        pendingCandidatesRef,
+        pendingOfferRef,
+        handleCallDisconnect,
+        caller,
+      }}
+    >
+      <>
+        {caller && <IncomingCall />}
+        {children}
+      </>
     </RTCContext.Provider>
   );
 }

@@ -7,9 +7,10 @@ import {
   SignallingMessage,
 } from "@/types/SignallingTypes";
 import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   mediaDevices,
   MediaStream,
@@ -34,12 +35,15 @@ function VideoCall() {
 
   const [localSrc, setLocalSrc] = useState<string | null>(null);
   const [remoteSrc, setRemoteSrc] = useState<string | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isFrontCamera, setIsFrontCamera] = useState(true);
   const localStreamRef = useRef<MediaStream>(new MediaStream());
   const remoteStreamRef = useRef<MediaStream>(new MediaStream());
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const { clientRef, socketConnected } = useWebSocket();
   const user = useAuthenticatedUser();
   const { pendingCandidatesRef, pendingOfferRef } = useWebRTC();
+  const router = useRouter();
 
   const setupLocalStream = useCallback(async () => {
     if (!(clientRef.current && socketConnected)) return;
@@ -61,6 +65,17 @@ function VideoCall() {
       // logs for development
       pcRef.current.addEventListener("connectionstatechange", () => {
         console.log("🔌 Connection state:", pcRef.current?.connectionState);
+        if (!pcRef.current) {
+          console.warn("rozłączono");
+          return;
+        }
+        switch (pcRef.current.connectionState) {
+          case "disconnected":
+          case "closed":
+            console.log("Disconnected");
+            router.back();
+            break;
+        }
       });
 
       pcRef.current.addEventListener("iceconnectionstatechange", () => {
@@ -125,8 +140,8 @@ function VideoCall() {
               event.candidate.candidate
             );
             const candidateBody: IceCandidate = {
-              sender: user.id,
-              recipient: recipientId,
+              sender: user.id.toString(),
+              recipient: recipientId.toString(),
               type: "candidate",
               payload: event.candidate,
             };
@@ -156,8 +171,8 @@ function VideoCall() {
         await pcRef.current.setLocalDescription(offerDescription);
 
         const offer: Offer = {
-          sender: user.id,
-          recipient: recipientId,
+          sender: user.id.toString(),
+          recipient: recipientId.toString(),
           payload: offerDescription,
           type: offerDescription.type as "offer",
         };
@@ -251,9 +266,27 @@ function VideoCall() {
     pendingOfferRef,
   ]);
 
+  const toggleMute = () => {
+    if (localStreamRef.current) {
+      const audioTrack = localStreamRef.current.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !audioTrack.enabled;
+        setIsMuted(!audioTrack.enabled);
+      }
+    }
+  };
+
+  const switchCamera = async () => {
+    const videoTrack = localStreamRef.current.getVideoTracks()[0];
+    const constraints = { facingMode: isFrontCamera ? "environment" : "user" };
+
+    videoTrack.applyConstraints(constraints);
+    setIsFrontCamera(!isFrontCamera);
+  };
+
   return (
-    <View className="flex-1 bg-black p-5">
-      <View className="flex-1 gap-3">
+    <SafeAreaView className="flex-1 bg-black">
+      <View className="flex-1 gap-3 mt-10">
         {/* Local Video */}
         <View className="flex-1">
           <Text className="text-white mb-2">Local Stream (You)</Text>
@@ -262,7 +295,7 @@ function VideoCall() {
               streamURL={localSrc}
               style={{ flex: 1 }}
               objectFit="cover"
-              mirror={true}
+              mirror={isFrontCamera}
             />
           ) : (
             <View className="flex-1 bg-gray-800 items-center justify-center">
@@ -289,24 +322,24 @@ function VideoCall() {
       </View>
 
       {/* Buttons */}
-      <View className="gap-3 py-5">
-        <TouchableOpacity className="bg-blue-600 py-4 rounded-lg">
+      <View className="flex-row gap-3 py-5 justify-center">
+        <TouchableOpacity
+          onPress={toggleMute}
+          className={`${isMuted ? "bg-red-600" : "bg-gray-600"} py-4 px-6 rounded-full`}
+        >
           <Text className="text-white text-center font-semibold">
-            Start Local Stream
+            {isMuted ? "🔇 Unmute" : "🎤 Mute"}
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity className="bg-green-600 py-4 rounded-lg">
-          <Text className="text-white text-center font-semibold">
-            Initiate Call
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity className="bg-red-600 py-4 rounded-lg">
-          <Text className="text-white text-center font-semibold">End Call</Text>
+        <TouchableOpacity
+          onPress={switchCamera}
+          className="bg-blue-600 py-4 px-6 rounded-full"
+        >
+          <Text className="text-white text-center font-semibold">🔄 Flip</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
