@@ -203,7 +203,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setRefreshToken(registerJson.refreshToken);
     } catch (error: any) {
       if (error.response) {
-        console.log(error);
         const errorMsg = error.response.data?.message || "Registration failed";
         setErrorMessage(errorMsg);
       } else if (error.request) {

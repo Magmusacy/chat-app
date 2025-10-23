@@ -22,13 +22,6 @@ export default function UserCard({ cardUser }: { cardUser: OtherUser }) {
         ? "text-gray-300"
         : "text-white font-medium";
 
-  const initials = cardUser.name
-    .split(" ")
-    .map((word: string) => word[0])
-    .join("")
-    .toUpperCase()
-    .substring(0, 2);
-
   return (
     <View className="flex-row bg-surface rounded-lg p-3">
       <View className="relative">

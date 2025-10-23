@@ -271,28 +271,7 @@ export default function Chat() {
             value={message}
             onChangeText={setMessage}
           />
-          <TouchableOpacity className="ml-2">
-            <Feather
-              name="paperclip"
-              size={20}
-              color={theme.colors.textMuted}
-            />
-          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          onPress={() =>
-            router.push(`/videoCall/${params.recipientId}?type=call` as any)
-          }
-        >
-          <Text className="text-white bg-red-500 p-4">ZADZWON</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            router.push(`/videoCall/${params.recipientId}?type=answer` as any);
-          }}
-        >
-          <Text className="text-white bg-red-500 p-4">ODBIERz</Text>
-        </TouchableOpacity>
         <TouchableOpacity
           disabled={
             message.length === 0 || !socketConnected || !clientRef.current
