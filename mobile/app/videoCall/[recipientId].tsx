@@ -7,10 +7,10 @@ import {
   SignallingMessage,
 } from "@/types/SignallingTypes";
 import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import {
   mediaDevices,
   MediaStream,
@@ -76,24 +76,6 @@ function VideoCall() {
             router.back();
             break;
         }
-      });
-
-      pcRef.current.addEventListener("iceconnectionstatechange", () => {
-        console.log(
-          "🧊 ICE connection state:",
-          pcRef.current?.iceConnectionState
-        );
-      });
-
-      pcRef.current.addEventListener("icegatheringstatechange", () => {
-        console.log(
-          "📡 ICE gathering state:",
-          pcRef.current?.iceGatheringState
-        );
-      });
-
-      pcRef.current.addEventListener("signalingstatechange", () => {
-        console.log("📶 Signaling state:", pcRef.current?.signalingState);
       });
 
       pcRef.current.addEventListener("track", (event) => {
@@ -284,62 +266,140 @@ function VideoCall() {
     setIsFrontCamera(!isFrontCamera);
   };
 
-  return (
-    <SafeAreaView className="flex-1 bg-black">
-      <View className="flex-1 gap-3 mt-10">
-        {/* Local Video */}
-        <View className="flex-1">
-          <Text className="text-white mb-2">Local Stream (You)</Text>
-          {localSrc ? (
-            <RTCView
-              streamURL={localSrc}
-              style={{ flex: 1 }}
-              objectFit="cover"
-              mirror={isFrontCamera}
-            />
-          ) : (
-            <View className="flex-1 bg-gray-800 items-center justify-center">
-              <Text className="text-gray-500">No local video</Text>
-            </View>
-          )}
-        </View>
+  const handleEndCall = () => {
+    router.back();
+  };
 
-        {/* Remote Video */}
-        <View className="flex-1">
-          <Text className="text-white mb-2">Remote Stream</Text>
-          {remoteSrc ? (
-            <RTCView
-              streamURL={remoteSrc}
-              style={{ flex: 1 }}
-              objectFit="cover"
-            />
-          ) : (
-            <View className="flex-1 bg-gray-800 items-center justify-center">
-              <Text className="text-gray-500">No remote video</Text>
-            </View>
-          )}
+  return (
+    <View className="flex-1 bg-black">
+      <RTCView
+        streamURL={remoteSrc ? remoteSrc : undefined}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: "100%",
+          height: "100%",
+        }}
+        objectFit="cover"
+      />
+
+      {!remoteSrc && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "#1a1a1a",
+          }}
+        >
+          <Text className="text-gray-400 text-lg">Connecting...</Text>
         </View>
+      )}
+
+      <View
+        style={{
+          position: "absolute",
+          top: 60,
+          right: 16,
+          width: 120,
+          height: 160,
+          borderRadius: 12,
+          overflow: "hidden",
+          borderWidth: 2,
+          borderColor: "white",
+          backgroundColor: "#000",
+        }}
+      >
+        <RTCView
+          streamURL={localSrc || ""}
+          style={{ width: "100%", height: "100%" }}
+          objectFit="cover"
+          mirror={isFrontCamera}
+        />
+        {!localSrc && (
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "#333",
+            }}
+          >
+            <Text className="text-gray-500 text-xs">No video</Text>
+          </View>
+        )}
       </View>
 
-      {/* Buttons */}
-      <View className="flex-row gap-3 py-5 justify-center">
-        <TouchableOpacity
-          onPress={toggleMute}
-          className={`${isMuted ? "bg-red-600" : "bg-gray-600"} py-4 px-6 rounded-full`}
-        >
-          <Text className="text-white text-center font-semibold">
-            {isMuted ? "🔇 Unmute" : "🎤 Mute"}
-          </Text>
-        </TouchableOpacity>
-
+      <View
+        style={{
+          position: "absolute",
+          bottom: 50,
+          left: 0,
+          right: 0,
+          flexDirection: "row",
+          justifyContent: "center",
+          gap: 20,
+          paddingHorizontal: 20,
+        }}
+      >
         <TouchableOpacity
           onPress={switchCamera}
-          className="bg-blue-600 py-4 px-6 rounded-full"
+          className="bg-gray-700/80 w-16 h-16 rounded-full items-center justify-center"
+          activeOpacity={0.8}
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+          }}
         >
-          <Text className="text-white text-center font-semibold">🔄 Flip</Text>
+          <Ionicons name="camera-reverse" size={28} color="white" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={handleEndCall}
+          className="bg-red-500 w-16 h-16 rounded-full items-center justify-center"
+          activeOpacity={0.8}
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+          }}
+        >
+          <Ionicons name="call" size={28} color="white" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={toggleMute}
+          className={`${isMuted ? "bg-red-500" : "bg-gray-700/80"} w-16 h-16 rounded-full items-center justify-center`}
+          activeOpacity={0.8}
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+          }}
+        >
+          <Ionicons
+            name={isMuted ? "mic-off" : "mic"}
+            size={28}
+            color="white"
+          />
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

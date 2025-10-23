@@ -32,6 +32,7 @@ function IncomingCall() {
   const handleAnswer = () => {
     if (caller) {
       router.push(`/videoCall/${caller.id}?type=answer` as any);
+      handleCallDisconnect(); // change caller to null again
     }
   };
 
