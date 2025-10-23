@@ -26,6 +26,6 @@ server:
 
 azure:
   storage:
-    connection-string: DefaultEndpointsProtocol=https;AccountName=chatapprnspringboot;AccountKey=8I4MgvteKxaayZ6IpCid/O5x+JO31QbWOg1cW2xKkTo1WxT7Rb/mUvR6zTNRvOzdnEkDPc6jNPNN+AStkwOLIA==;EndpointSuffix=core.windows.net
+    connection-string: ${AZURE_STORAGE_CONNECTION_STRING} # make sure this is set in your environment variables
     blob-container-name: profile-pictures
 

@@ -46,6 +46,11 @@ public class AuthService {
 
     public AuthenticationResponse refreshToken(RefreshTokenRequest request) {
         String refreshToken = request.refreshToken();
+
+        if (refreshToken == null || refreshToken.trim().isEmpty()) {
+            throw new RuntimeException("Refresh token cannot be null or empty");
+        }
+
         String username = jwtService.extractUsername(refreshToken);
 
         if (username == null) {
