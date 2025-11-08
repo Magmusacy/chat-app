@@ -46,9 +46,14 @@ function VideoCall() {
   const router = useRouter();
 
   const setupLocalStream = useCallback(async () => {
-    if (!(clientRef.current && socketConnected)) return;
+    if (!(clientRef.current && socketConnected)) {
+      console.warn("Client or socket not ready");
+      return false;
+    }
     try {
+      console.log("🎥 Setting up local stream...");
       pcRef.current = new RTCPeerConnection(ICE_SERVERS);
+
       const stream = await mediaDevices.getUserMedia({
         audio: true,
         video: true,
@@ -83,10 +88,14 @@ function VideoCall() {
         remoteStreamRef.current = remoteStream;
         setRemoteSrc(remoteStream.toURL());
       });
+
+      console.log("✅ Local stream setup complete");
+      return true;
     } catch (err) {
       console.error("Error getting local media:", err);
+      return false;
     }
-  }, [clientRef, socketConnected]);
+  }, [clientRef, socketConnected, router]);
 
   useEffect(() => {
     return () => {
@@ -108,9 +117,10 @@ function VideoCall() {
     const call = async () => {
       if (!(clientRef.current && socketConnected)) return;
       try {
-        await setupLocalStream();
+        console.log("📞 Starting call...");
+        const success = await setupLocalStream();
 
-        if (!pcRef.current) {
+        if (!success || !pcRef.current) {
           console.error("PCRef not initialized after setupLocalStream");
           return;
         }
@@ -163,6 +173,7 @@ function VideoCall() {
           destination: "/app/signal",
           body: JSON.stringify(offer),
         });
+        console.log("✅ Offer sent");
       } catch (err) {
         console.error("Error starting call:", err);
       }
@@ -185,9 +196,10 @@ function VideoCall() {
       if (!pendingOfferRef.current) return;
 
       try {
-        await setupLocalStream();
+        console.log("📲 Answering call...");
+        const success = await setupLocalStream();
 
-        if (!pcRef.current) {
+        if (!success || !pcRef.current) {
           console.error("PCRef not initialized after setupLocalStream");
           return;
         }
@@ -231,7 +243,7 @@ function VideoCall() {
           destination: "/app/signal",
           body: JSON.stringify(answer),
         });
-        console.log("ANSWER sent");
+        console.log("✅ Answer sent");
       } catch (err) {
         console.error("Error in answer flow:", err);
       }
@@ -310,7 +322,6 @@ function VideoCall() {
           right: 16,
           width: 120,
           height: 160,
-          borderRadius: 12,
           overflow: "hidden",
           borderWidth: 2,
           borderColor: "white",
@@ -319,7 +330,7 @@ function VideoCall() {
       >
         <RTCView
           streamURL={localSrc || ""}
-          style={{ width: "100%", height: "100%" }}
+          style={{ width: "100%", height: "100%", borderRadius: 12 }}
           objectFit="cover"
           mirror={isFrontCamera}
         />

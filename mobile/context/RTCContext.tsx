@@ -1,4 +1,3 @@
-import IncomingCall from "@/components/IncomingCall";
 import { OtherUser } from "@/types/OtherUser";
 import {
   IceCandidate,
@@ -78,10 +77,7 @@ function RTCProvider({ children }: { children: ReactNode }) {
         caller,
       }}
     >
-      <>
-        {caller && <IncomingCall />}
-        {children}
-      </>
+      {children}
     </RTCContext.Provider>
   );
 }

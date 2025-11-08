@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { useCallback } from "react";
 
 const REFRESH_TOKEN_KEY = "refreshToken";
 
@@ -11,14 +12,14 @@ export function useRefreshToken() {
     }
   };
 
-  const getRefreshToken = async () => {
+  const getRefreshToken = useCallback(async () => {
     try {
       const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
       return refreshToken;
     } catch (err) {
       console.error("Failed to get refresh token: ", err);
     }
-  };
+  }, []);
 
   const deleteRefreshToken = async () => {
     try {

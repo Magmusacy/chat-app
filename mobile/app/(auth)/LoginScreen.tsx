@@ -2,7 +2,13 @@ import { MIN_NAME_LENGTH, MIN_PASSWORD_LENGTH } from "@/config";
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 interface FormErrors {
@@ -15,13 +21,13 @@ export default function LoginScreen({
 }: {
   setIsSignIn: (value: boolean) => void;
 }) {
-  const [name, setName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [errors, setErrors] = useState<FormErrors>({
     nameTooShort: false,
     passwordTooShort: false,
   });
-  const { login, errorMessage } = useAuth();
+  const { login, errorMessage, isLoadingUser } = useAuth();
 
   const validateName = (value: string) => {
     const newErrors = { ...errors };
@@ -41,8 +47,8 @@ export default function LoginScreen({
   };
 
   const handleLogin = () => {
-    if (!hasErrors() && name.trim() && password.trim()) {
-      login(name, password);
+    if (!hasErrors()) {
+      login(email.trim(), password.trim());
     }
   };
 
@@ -65,9 +71,9 @@ export default function LoginScreen({
                 }`}
                 placeholder="Enter your username"
                 placeholderTextColor="#9ca3af"
-                value={name}
+                value={email}
                 onChangeText={(text) => {
-                  setName(text);
+                  setEmail(text);
                   validateName(text);
                 }}
                 autoCapitalize="none"
@@ -132,18 +138,18 @@ export default function LoginScreen({
 
           <TouchableOpacity
             className={`mt-4 w-full h-14 rounded-xl flex items-center justify-center ${
-              hasErrors() || !name.trim() || !password.trim()
+              hasErrors() || !email.trim() || !password.trim()
                 ? "bg-gray-600 opacity-50"
                 : "bg-primary active:bg-blue-700"
             }`}
             onPress={handleLogin}
-            disabled={hasErrors() || !name.trim() || !password.trim()}
+            disabled={hasErrors() || !email.trim() || !password.trim()}
           >
             <Text className="text-white text-lg font-semibold">Log in</Text>
           </TouchableOpacity>
+          {isLoadingUser && <ActivityIndicator size="large" color="#3b82f6" />}
         </View>
 
-        {/* Sign Up Link */}
         <Text className="text-white mt-10 text-base">
           {"Don't have an account? "}
           <Text
