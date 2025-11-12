@@ -37,7 +37,7 @@ export default function Index() {
   }, [navigation, allUsers]);
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["bottom"]}>
       <UsersList list={filteredUsers} />
     </SafeAreaView>
   );

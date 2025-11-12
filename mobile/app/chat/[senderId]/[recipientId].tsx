@@ -135,14 +135,14 @@ export default function Chat() {
             onPress={() =>
               router.push(`/videoCall/${params.recipientId}?type=call` as any)
             }
-            className="w-12 h-12 rounded-full items-center justify-center bg-surfaceLight"
+            className="w-12 h-12 rounded-full items-center justify-center bg-primary"
           >
-            <Feather name="video" size={24} color={theme.colors.textMuted} />
+            <Feather name="video" size={24} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
       ),
     });
-  }, [recipient, navigation]);
+  }, [recipient, navigation, router, params.recipientId]);
 
   const fetchMessages = useCallback(
     async (recipientId: number, isRetry = false) => {

@@ -29,7 +29,7 @@ export default function ChatMessages({
                   setSelectedMessageId(item.id);
                 }
               }}
-              className={`p-2 max-w-[80%] ${item.senderId === user.id ? "self-end" : "self-start"}`}
+              className={`p-0.5 max-w-[80%] ${item.senderId === user.id ? "self-end" : "self-start"}`}
             >
               {selectedMessageId === item.id && (
                 <Text
@@ -44,8 +44,8 @@ export default function ChatMessages({
               <View
                 className={`p-3 rounded-2xl ${
                   item.senderId === user?.id
-                    ? "bg-sentMessage rounded-tr-none"
-                    : "bg-receivedMessage rounded-tl-none"
+                    ? "bg-sentMessage"
+                    : "bg-receivedMessage"
                 }`}
               >
                 <Text className="text-textBase">{item.content}</Text>
@@ -54,6 +54,7 @@ export default function ChatMessages({
           )}
           keyExtractor={(item) => String(item.id)}
           contentContainerClassName="p-5"
+          showsVerticalScrollIndicator={false}
           inverted={true}
           extraData={selectedMessageId}
         />
