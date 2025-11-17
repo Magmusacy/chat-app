@@ -15,7 +15,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-
 //TODO: Should this be transactional, like the message should be sent if the transaction goes through
 //TODO it might be better to just send the added user but whatever for now that works well
 @Service

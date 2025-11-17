@@ -33,7 +33,7 @@ function getTokenExpiryTime(token: string | null): number {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState<boolean>(false);
+  const [isLoadingUser, setIsLoadingUser] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const { getRefreshToken, setRefreshToken, deleteRefreshToken } =
@@ -44,14 +44,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleRefreshToken = useCallback(async () => {
     if (getTokenExpiryTime(accessToken) > refreshTimeOffset) return;
 
-    const refreshToken = await getRefreshToken();
-
-    if (!refreshToken) {
-      throw new Error("Could not find refresh token on device");
-    }
-
     const response = await axios.post(`${API_URL}/auth/refresh`, {
-      refreshToken: refreshToken,
+      refreshToken: await getRefreshToken(),
     });
 
     if (response.status === 200) {
@@ -75,7 +69,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [accessToken, handleRefreshToken]);
 
   // set up axios interceptors for handling access / refresh tokens (set up once)
-  // for some reason it gets rendered twice?
   useEffect(() => {
     const req = api.interceptors.request.use(
       (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
@@ -104,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = api.interceptors.response.use(
       (response) => response,
       async (error) => {
-        console.log("response axios error:", error);
+        console.log("error:", error);
         const originalRequest = error.config;
 
         if (
@@ -137,14 +130,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [handleRefreshToken]);
 
   useEffect(() => {
-    const loginFromStorage = async () => {
+    const validateUser = async () => {
       const refreshToken = await getRefreshToken();
       if (!refreshToken) {
         setUser(null);
         return;
       }
       try {
-        setIsLoadingUser(true);
         const response = await api.post("/auth/refresh", {
           refreshToken,
         });
@@ -164,8 +156,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    loginFromStorage();
-  }, [getRefreshToken]);
+    validateUser();
+  }, []);
 
   const getUserInfo = async (token: string): Promise<User> => {
     try {
@@ -195,7 +187,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     passwordConfirmation: string
   ): Promise<void> => {
     try {
-      setIsLoadingUser(true);
       const registerResponse = await api.post("/auth/register", {
         email,
         name,
@@ -207,6 +198,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         registerResponse.data;
       tokenRef.current = registerJson.accessToken;
       setUser(await getUserInfo(registerJson.accessToken));
+
+      // store only refresh token
       setRefreshToken(registerJson.refreshToken);
     } catch (error: any) {
       if (error.response) {
@@ -217,14 +210,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setErrorMessage(error.message);
       }
-    } finally {
-      setIsLoadingUser(false);
     }
   };
 
   const login = async (email: string, password: string): Promise<void> => {
     try {
-      setIsLoadingUser(true);
       const loginResponse = await api.post("/auth/login", {
         email,
         password,
@@ -234,6 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginResponse.data;
       tokenRef.current = loginData.accessToken;
       setUser(await getUserInfo(loginData.accessToken));
+
       setRefreshToken(loginData.refreshToken);
     } catch (error: any) {
       if (error.response) {
@@ -244,8 +235,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setErrorMessage(error.message);
       }
-    } finally {
-      setIsLoadingUser(false);
     }
   };
 
