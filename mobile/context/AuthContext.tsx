@@ -45,6 +45,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setErrorMessage(null);
   }, []);
 
+  const logOut = useCallback(async () => {
+    deleteRefreshToken();
+    tokenRef.current = "";
+    setUser(null);
+  }, [deleteRefreshToken]);
+
   const handleRefreshToken = useCallback(async () => {
     if (getTokenExpiryTime(accessToken) > refreshTimeOffset) return;
 
@@ -59,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       logOut();
     }
-  }, []);
+  }, [accessToken, getRefreshToken, logOut]);
 
   useEffect(() => {
     const remainingTime = getTokenExpiryTime(accessToken);
@@ -165,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     validateUser();
-  }, []);
+  }, [getRefreshToken]);
 
   const getUserInfo = async (token: string): Promise<User> => {
     try {
@@ -195,6 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     passwordConfirmation: string
   ): Promise<void> => {
     try {
+      setIsLoadingUser(true);
       const registerResponse = await api.post("/auth/register", {
         email,
         name,
@@ -218,11 +225,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setErrorMessage(error.message);
       }
+    } finally {
+      setIsLoadingUser(false);
     }
   };
 
   const login = async (email: string, password: string): Promise<void> => {
     try {
+      setIsLoadingUser(true);
       const loginResponse = await api.post("/auth/login", {
         email,
         password,
@@ -243,13 +253,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setErrorMessage(error.message);
       }
+    } finally {
+      setIsLoadingUser(false);
     }
-  };
-
-  const logOut = async () => {
-    deleteRefreshToken();
-    tokenRef.current = "";
-    setUser(null);
   };
 
   return (

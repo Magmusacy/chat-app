@@ -12,22 +12,23 @@ export function useRefreshToken() {
     }
   };
 
-  const getRefreshToken = useCallback(async () => {
+  const getRefreshToken = useCallback(async (): Promise<string | null> => {
     try {
       const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
       return refreshToken;
     } catch (err) {
       console.error("Failed to get refresh token: ", err);
+      return null;
     }
   }, []);
 
-  const deleteRefreshToken = async () => {
+  const deleteRefreshToken = useCallback(async () => {
     try {
       await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
     } catch (err) {
       console.error("failed to remove refresh token:", err);
     }
-  };
+  }, []);
 
   return { getRefreshToken, setRefreshToken, deleteRefreshToken };
 }

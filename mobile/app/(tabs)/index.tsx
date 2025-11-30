@@ -1,6 +1,5 @@
 import UsersHeader from "@/components/UsersHeader";
 import UsersList from "@/components/UsersList";
-import { useAuth } from "@/context/AuthContext";
 import { useWebSocket } from "@/context/WebSocketContext";
 import { chatRoomIdResolver } from "@/utils/chat-path-resolver";
 import useAuthenticatedUser from "@/utils/useAuthenticatedUser";
@@ -10,7 +9,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {
   const user = useAuthenticatedUser();
-  const { logOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const navigation = useNavigation();
   const { allUsers, latestMessages } = useWebSocket();

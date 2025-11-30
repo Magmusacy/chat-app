@@ -15,13 +15,6 @@ import {
 } from "react";
 import { useWebSocket } from "./WebSocketContext";
 
-const ICE_SERVERS = {
-  iceServers: [
-    { urls: "stun:stun.l.google.com:19302" },
-    // maybe add TURN???
-  ],
-};
-
 interface RTCInterface {
   pendingCandidatesRef: RefObject<IceCandidate[]>;
   pendingOfferRef: RefObject<Offer | null>;
@@ -66,7 +59,7 @@ function RTCProvider({ children }: { children: ReactNode }) {
         }
       });
     }
-  }, [socketConnected, clientRef]);
+  }, [socketConnected, clientRef, allUsers]);
 
   return (
     <RTCContext.Provider

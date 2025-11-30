@@ -90,7 +90,10 @@ export default function User() {
       const profilePictureUrl = res.data.profilePictureUrl;
       setUser({ ...user, profilePictureUrl });
     } catch (error) {
-      console.error("There was an error while trying to save profile image");
+      console.error(
+        "There was an error while trying to save profile image",
+        error
+      );
     } finally {
       setIsUploading(false);
       setImage(null);
@@ -103,7 +106,7 @@ export default function User() {
       setShowDeleteModal(false);
       logOut();
     } catch (error) {
-      console.error("Failed to delete account");
+      console.error("Failed to delete account", error);
     }
   };
 

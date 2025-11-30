@@ -47,6 +47,7 @@ export default function LoginScreen({
   };
 
   const handleLogin = () => {
+    console.log(isLoadingUser);
     if (!hasErrors()) {
       login(email.trim(), password.trim());
     }
