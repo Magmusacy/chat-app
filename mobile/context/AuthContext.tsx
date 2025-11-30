@@ -41,6 +41,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const tokenRef = useRef<string>("");
   const refreshTimeOffset = 30;
 
+  const clearError = useCallback(() => {
+    setErrorMessage(null);
+  }, []);
+
   const handleRefreshToken = useCallback(async () => {
     if (getTokenExpiryTime(accessToken) > refreshTimeOffset) return;
 
@@ -132,10 +136,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const validateUser = async () => {
       const refreshToken = await getRefreshToken();
+
+      // bug
       if (!refreshToken) {
         setUser(null);
+        setIsLoadingUser(false);
         return;
       }
+
       try {
         const response = await api.post("/auth/refresh", {
           refreshToken,
@@ -198,7 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         registerResponse.data;
       tokenRef.current = registerJson.accessToken;
       setUser(await getUserInfo(registerJson.accessToken));
-
+      clearError();
       // store only refresh token
       setRefreshToken(registerJson.refreshToken);
     } catch (error: any) {
@@ -224,7 +232,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginResponse.data;
       tokenRef.current = loginData.accessToken;
       setUser(await getUserInfo(loginData.accessToken));
-
+      clearError();
       setRefreshToken(loginData.refreshToken);
     } catch (error: any) {
       if (error.response) {
@@ -257,6 +265,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         tokenRef,
         handleRefreshToken,
         accessToken,
+        clearError,
       }}
     >
       {children}

@@ -27,7 +27,7 @@ export default function LoginScreen({
     nameTooShort: false,
     passwordTooShort: false,
   });
-  const { login, errorMessage, isLoadingUser } = useAuth();
+  const { login, errorMessage, isLoadingUser, clearError } = useAuth();
 
   const validateName = (value: string) => {
     const newErrors = { ...errors };
@@ -153,7 +153,10 @@ export default function LoginScreen({
         <Text className="text-white mt-10 text-base">
           {"Don't have an account? "}
           <Text
-            onPress={() => setIsSignIn(false)}
+            onPress={() => {
+              clearError();
+              setIsSignIn(false);
+            }}
             className="text-primary font-semibold"
           >
             Sign Up

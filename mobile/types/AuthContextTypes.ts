@@ -14,6 +14,7 @@ export type AuthContextType = {
   handleRefreshToken: () => Promise<void>;
   accessToken: string | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  clearError: () => void;
 };
 
 export interface User {

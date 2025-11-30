@@ -6,7 +6,13 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 interface FormErrors {
@@ -33,7 +39,7 @@ export default function RegisterScreen({
     passwordTooShort: false,
     passwordMismatch: false,
   });
-  const { register, errorMessage } = useAuth();
+  const { register, errorMessage, isLoadingUser, clearError } = useAuth();
 
   const validateEmail = (value: string) => {
     const newErrors = { ...errors };
@@ -258,12 +264,16 @@ export default function RegisterScreen({
           >
             <Text className="text-white text-lg font-semibold">Register</Text>
           </TouchableOpacity>
+          {isLoadingUser && <ActivityIndicator size="large" color="#3b82f6" />}
         </View>
 
         <Text className="text-white mt-10 text-base">
           {"Already have an account? "}
           <Text
-            onPress={() => setIsSignIn(true)}
+            onPress={() => {
+              clearError();
+              setIsSignIn(true);
+            }}
             className="text-primary font-semibold"
           >
             Sign In
