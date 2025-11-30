@@ -1,105 +1,98 @@
+import { NotificationInterface } from "@/app/user/[id]";
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useMemo } from "react";
-import { Animated, Text, TouchableOpacity } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
+import { Text, TouchableOpacity } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 interface NotificationProps {
-  type: "success" | "error" | "info";
-  message: string;
-  visible: boolean;
-  onDismiss?: () => void;
-  duration?: number;
+  notification: NotificationInterface;
+  setNotification: Dispatch<SetStateAction<NotificationInterface>>;
+  duration: number;
 }
 
-// Todo fix this animation
 export default function Notification({
-  type,
-  message,
-  visible,
-  onDismiss,
-  duration = 4000,
+  notification,
+  setNotification,
+  duration,
 }: NotificationProps) {
-  const insets = useSafeAreaInsets();
-  const slideAnim = useMemo(() => new Animated.Value(-100), []);
+  const offsetY = useSharedValue(-200);
+  const visible = notification.visible;
+  const timerRef = useRef<number | null>(null);
+
+  const animatedStyles = useAnimatedStyle(() => ({
+    transform: [{ translateY: offsetY.value }],
+  }));
+
+  const showNotification = useCallback(() => {
+    offsetY.value = withSpring(0, {
+      damping: 15,
+      stiffness: 100,
+    });
+    setNotification((prev) => ({ ...prev, visible: true }));
+  }, [offsetY, setNotification]);
+
+  const hideNotification = useCallback(() => {
+    offsetY.value = withSpring(-200, {
+      damping: 15,
+      stiffness: 100,
+    });
+    setNotification((prev) => ({ ...prev, visible: false }));
+  }, [offsetY, setNotification]);
 
   useEffect(() => {
     if (visible) {
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        tension: 50,
-        friction: 8,
-        useNativeDriver: true,
-      }).start();
-
-      const timer = setTimeout(() => {
-        Animated.timing(slideAnim, {
-          toValue: -100,
-          duration: 300,
-          useNativeDriver: true,
-        }).start(() => {
-          onDismiss?.();
-        });
-      }, duration);
-
-      return () => clearTimeout(timer);
+      showNotification();
+      timerRef.current = setTimeout(hideNotification, duration);
     } else {
-      slideAnim.setValue(-100);
+      hideNotification();
     }
-  }, [visible, duration, slideAnim, onDismiss]);
-
-  if (!visible) return null;
-
-  const getNotificationStyles = () => {
-    switch (type) {
-      case "success":
-        return {
-          bg: "bg-green-500",
-          icon: "checkmark-circle" as const,
-          iconColor: "#FFF",
-        };
-      case "error":
-        return {
-          bg: "bg-red-500",
-          icon: "close-circle" as const,
-          iconColor: "#FFF",
-        };
-      case "info":
-        return {
-          bg: "bg-blue-500",
-          icon: "information-circle" as const,
-          iconColor: "#FFF",
-        };
-    }
-  };
-
-  const styles = getNotificationStyles();
+  }, [visible, showNotification, hideNotification, duration]);
 
   return (
     <Animated.View
-      style={{
-        position: "absolute",
-        top: insets.top + 10,
-        left: 16,
-        right: 16,
-        zIndex: 9999,
-        transform: [{ translateY: slideAnim }],
-      }}
+      style={[
+        {
+          position: "absolute",
+          top: 10,
+          left: 16,
+          right: 16,
+          backgroundColor: "#1a1f2e",
+          zIndex: 9999,
+          elevation: 100,
+          borderRadius: 16,
+          padding: 12,
+          borderWidth: 1,
+          borderColor: "rgba(59, 130, 246, 0.5)",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.5,
+          shadowRadius: 12,
+        },
+        animatedStyles,
+      ]}
     >
       <TouchableOpacity
         activeOpacity={0.95}
-        onPress={onDismiss}
-        className={`${styles.bg} rounded-2xl px-5 py-4 flex-row items-center shadow-2xl`}
-        style={{
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 8,
-          elevation: 10,
+        onPress={() => {
+          if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            hideNotification();
+          }
         }}
+        className={`rounded-2xl px-5 py-4 flex-row items-center`}
       >
-        <Ionicons name={styles.icon} size={28} color={styles.iconColor} />
         <Text className="text-white font-semibold text-base ml-3 flex-1">
-          {message}
+          {notification.message}
         </Text>
         <Ionicons name="close" size={22} color="rgba(255,255,255,0.8)" />
       </TouchableOpacity>

@@ -15,7 +15,7 @@ interface ProfileInformationProps {
   setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
   fullName: string;
   setFullName: React.Dispatch<React.SetStateAction<string>>;
-  onShowNotification?: (
+  onShowNotification: (
     type: "success" | "error" | "info",
     message: string
   ) => void;
@@ -79,26 +79,23 @@ export default function ProfileInformation({
     if (!validatePassword(password, passwordConfirmation)) return;
 
     try {
-      const response = await api.post("/users/update", {
+      await api.post("/users/update", {
         name: fullName,
         password: password.length === 0 ? null : password,
         passwordConfirmation:
           passwordConfirmation.length === 0 ? null : passwordConfirmation,
       });
 
-      const data = response.data;
-      console.log(data);
-
       setUser({ ...user, name: fullName });
       setIsEditing(false);
       setPassword("");
       setPasswordConfirmation("");
 
-      onShowNotification?.("success", "Profile updated successfully!");
+      onShowNotification("success", "Profile updated successfully!");
     } catch (error) {
       console.error("Failed to update profile", error);
 
-      onShowNotification?.(
+      onShowNotification(
         "error",
         "Failed to update profile. Please try again."
       );

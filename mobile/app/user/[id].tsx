@@ -19,6 +19,12 @@ export interface PhotoInfo {
   name: string;
 }
 
+export interface NotificationInterface {
+  type: "success" | "error" | "info";
+  message: string;
+  visible: boolean;
+}
+
 export default function User() {
   const user = useAuthenticatedUser();
   const { setUser, logOut } = useAuth();
@@ -29,11 +35,13 @@ export default function User() {
   const [fullName, setFullName] = useState(user.name || "");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showImagePickerMenu, setShowImagePickerMenu] = useState(false);
-  const [notification, setNotification] = useState<{
-    type: "success" | "error" | "info";
-    message: string;
-    visible: boolean;
-  }>({ type: "success", message: "", visible: false });
+  const [notification, setNotification] = useState<NotificationInterface>({
+    type: "success",
+    message: "",
+    visible: false,
+  });
+
+  const notificationDuration = 4000;
 
   const pickImage = async () => {
     setShowImagePickerMenu(false);
@@ -102,10 +110,9 @@ export default function User() {
   return (
     <SafeAreaView edges={["bottom"]} className="flex-1 bg-background">
       <Notification
-        type={notification.type}
-        message={notification.message}
-        visible={notification.visible}
-        onDismiss={() => setNotification({ ...notification, visible: false })}
+        notification={notification}
+        setNotification={setNotification}
+        duration={notificationDuration}
       />
 
       <KeyboardAwareScrollView
